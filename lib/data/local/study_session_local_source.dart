@@ -16,7 +16,8 @@ class StudySessionLocalSource {
     return getAll().where((s) => s.subjectId == subjectId).toList();
   }
 
-  Future<void> save(StudySession session) => _box.put(session.id, session.toJson());
+  Future<void> save(StudySession session) =>
+      _box.put(session.id, session.toJson());
 
   Future<void> delete(String id) => _box.delete(id);
 }

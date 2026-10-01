@@ -3,11 +3,11 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../../core/constants/hive_boxes.dart';
 import '../../models/subject.dart';
 
-class SubjectLocalSource{
+class SubjectLocalSource {
   Box get _box => Hive.box(HiveBoxes.subjects);
 
-  List<Subject> getAll(){
-    return _box.values 
+  List<Subject> getAll() {
+    return _box.values
         .map((e) => Subject.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
