@@ -9,6 +9,7 @@ class AppWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'StudyFlow',
+      debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       home: const Scaffold(),
     );
