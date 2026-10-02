@@ -1,0 +1,71 @@
+import 'package:uuid/uuid.dart';
+
+import '../../models/task.dart';
+import '../local/task_local_source.dart';
+
+class TaskRepository {
+  final TaskLocalSource _local;
+
+  TaskRepository(this._local);
+
+  List<Task> getAll() => _local.getAll();
+
+  List<Task> getBySubjectId(String subjectId) =>
+      _local.getBySubjectId(subjectId);
+
+  Future<void> delete(String id) => _local.delete(id);
+
+  Future<Task> add(
+    String title, {
+    String? description,
+    String? subjectId,
+    TaskPriority priority = TaskPriority.medium,
+    DateTime? dueDate,
+  }) async {
+    final now = DateTime.now();
+    final task = Task(
+      id: const Uuid().v4(),
+      title: title,
+      description: description,
+      subjectId: subjectId,
+      priority: priority,
+      dueDate: dueDate,
+      createdAt: now,
+      updatedAt: now,
+    );
+    await _local.save(task);
+    return task;
+  }
+
+  Future<Task> update(
+    Task task, {
+    String? title,
+    String? description,
+    String? subjectId,
+    TaskPriority? priority,
+    DateTime? dueDate,
+  }) async {
+    final updated = task.copyWith(
+      title: title,
+      description: description,
+      subjectId: subjectId,
+      priority: priority,
+      dueDate: dueDate,
+      updatedAt: DateTime.now(),
+    );
+    await _local.save(updated);
+    return updated;
+  }
+
+  Future<Task> setCompleted(Task task, bool isCompleted) async {
+    final now = DateTime.now();
+    final updated = task.copyWith(
+      isCompleted: isCompleted,
+      completedAt: isCompleted ? now : null,
+      clearCompletedAt: !isCompleted,
+      updatedAt: now,
+    );
+    await _local.save(updated);
+    return updated;
+  }
+}
