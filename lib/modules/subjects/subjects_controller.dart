@@ -25,7 +25,6 @@ class SubjectsController extends ChangeNotifier {
     return null;
   }
 
-
   void load() {
     _status = SubjectsStatus.loading;
     notifyListeners();
@@ -47,11 +46,7 @@ class SubjectsController extends ChangeNotifier {
     load();
   }
 
-  Future<void> update(
-    Subject subject,
-    String name,
-    String? description,
-  ) async {
+  Future<void> update(Subject subject, String name, String? description) async {
     await _repository.update(subject, name, description);
     load();
   }

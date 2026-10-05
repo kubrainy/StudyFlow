@@ -79,10 +79,7 @@ class _SubjectFormState extends State<SubjectForm> {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          AppPrimaryButton(
-            label: 'Kaydet',
-            onPressed: _canSave ? _save : null,
-          ),
+          AppPrimaryButton(label: 'Kaydet', onPressed: _canSave ? _save : null),
         ],
       ),
     );
