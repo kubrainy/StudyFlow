@@ -34,6 +34,7 @@ class SubjectRepository {
     final updated = subject.copyWith(
       name: name,
       description: description,
+      clearDescription: description == null,
       updatedAt: DateTime.now(),
     );
     await _local.save(updated);

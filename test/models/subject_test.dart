@@ -44,5 +44,11 @@ void main() {
       expect(updated.id, subject.id);
       expect(updated.totalStudyMinutes, subject.totalStudyMinutes);
     });
+
+    test('copyWith clearDescription açıklamayı temizler', () {
+      final updated = subject.copyWith(clearDescription: true);
+
+      expect(updated.description, isNull);
+    });
   });
 }

@@ -36,12 +36,13 @@ class Subject {
   Subject copyWith({
     String? name,
     String? description,
+    bool clearDescription = false,
     DateTime? updatedAt,
     int? totalStudyMinutes,
   }) => Subject(
     id: id,
     name: name ?? this.name,
-    description: description ?? this.description,
+    description: clearDescription ? null : (description ?? this.description),
     createdAt: createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     totalStudyMinutes: totalStudyMinutes ?? this.totalStudyMinutes,

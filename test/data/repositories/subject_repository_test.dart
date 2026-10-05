@@ -73,6 +73,26 @@ void main() {
       },
     );
 
+    test('update açıklama null ise eski açıklamayı siler', () async {
+      when(() => local.save(any())).thenAnswer((_) async {});
+      final withDescription = Subject(
+        id: 'abc-123',
+        name: 'Matematik',
+        description: 'Türev',
+        createdAt: DateTime(2026, 10, 1),
+        updatedAt: DateTime(2026, 10, 1),
+        totalStudyMinutes: 90,
+      );
+
+      final result = await repository.update(
+        withDescription,
+        'Matematik',
+        null,
+      );
+
+      expect(result.description, isNull);
+    });
+
     test('delete id\'yi local source\'a iletir', () async {
       when(() => local.delete(any())).thenAnswer((_) async {});
 
