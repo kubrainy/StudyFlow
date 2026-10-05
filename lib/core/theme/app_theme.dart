@@ -158,9 +158,22 @@ abstract final class AppTheme {
           color: AppColors.onPrimary,
         ),
       ),
+      // Modal'lar: 16dp köşe, #0F172A %40 perde (DESIGN.md → Elevation Level 3).
       dialogTheme: const DialogThemeData(
         backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        barrierColor: AppColors.scrim,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.cardAll),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        modalBarrierColor: AppColors.scrim,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.card),
+          ),
+        ),
       ),
     );
   }
