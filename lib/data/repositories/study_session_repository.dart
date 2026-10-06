@@ -16,15 +16,14 @@ class StudySessionRepository {
       _sessions.getBySubjectId(subjectId);
 
   Future<StudySession> add(
-    String subjectId,
+    String? subjectId,
     DateTime startedAt,
     int durationMinutes,
   ) async {
-    final subject = _subjects
-        .getAll()
-        .where((s) => s.id == subjectId)
-        .firstOrNull;
-    if (subject == null) {
+    final subject = subjectId == null
+        ? null
+        : _subjects.getAll().where((s) => s.id == subjectId).firstOrNull;
+    if (subjectId != null && subject == null) {
       throw ArgumentError('Ders bulunamadı: $subjectId');
     }
 
@@ -35,12 +34,14 @@ class StudySessionRepository {
       durationMinutes: durationMinutes,
     );
     await _sessions.save(session);
-    await _subjects.save(
-      subject.copyWith(
-        totalStudyMinutes: subject.totalStudyMinutes + durationMinutes,
-        updatedAt: DateTime.now(),
-      ),
-    );
+    if (subject != null) {
+      await _subjects.save(
+        subject.copyWith(
+          totalStudyMinutes: subject.totalStudyMinutes + durationMinutes,
+          updatedAt: DateTime.now(),
+        ),
+      );
+    }
     return session;
   }
 }

@@ -18,5 +18,18 @@ void main() {
       expect(result.startedAt, session.startedAt);
       expect(result.durationMinutes, 25);
     });
+    test('dersi olmayan oturum null subjectId ile gidip gelir', () {
+      final free = StudySession(
+        id: 'session-2',
+        subjectId: null,
+        startedAt: DateTime(2026, 10, 2, 15, 0),
+        durationMinutes: 30,
+      );
+
+      final result = StudySession.fromJson(free.toJson());
+
+      expect(result.subjectId, isNull);
+      expect(result.durationMinutes, 30);
+    });
   });
 }

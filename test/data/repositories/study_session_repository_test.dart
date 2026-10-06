@@ -94,5 +94,17 @@ void main() {
       verifyNever(() => sessions.save(any()));
       verifyNever(() => subjects.save(any()));
     });
+    test(
+      'ders seçilmediyse oturumu kaydeder, hiçbir dersi değiştirmez',
+      () async {
+        final result = await repository.add(null, startedAt, 40);
+
+        expect(result.subjectId, isNull);
+        expect(result.durationMinutes, 40);
+        verify(() => sessions.save(result)).called(1);
+        verifyNever(() => subjects.getAll());
+        verifyNever(() => subjects.save(any()));
+      },
+    );
   });
 }

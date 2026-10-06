@@ -1,12 +1,12 @@
 class StudySession {
   final String id;
-  final String subjectId;
+  final String? subjectId;
   final DateTime startedAt;
   final int durationMinutes;
 
   const StudySession({
     required this.id,
-    required this.subjectId,
+    this.subjectId,
     required this.startedAt,
     required this.durationMinutes,
   });
@@ -20,7 +20,7 @@ class StudySession {
 
   factory StudySession.fromJson(Map<String, dynamic> json) => StudySession(
     id: json['id'] as String,
-    subjectId: json['subjectId'] as String,
+    subjectId: json['subjectId'] as String?,
     startedAt: DateTime.parse(json['startedAt'] as String),
     durationMinutes: json['durationMinutes'] as int,
   );
