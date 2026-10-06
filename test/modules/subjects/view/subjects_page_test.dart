@@ -3,8 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:studyflow/data/repositories/subject_repository.dart';
 import 'package:studyflow/data/repositories/task_repository.dart';
 import 'package:studyflow/models/subject.dart';
-import 'package:studyflow/modules/subjects/controller/subjects_controller.dart';
 import 'package:studyflow/modules/subjects/view/subjects_page.dart';
+import 'package:studyflow/modules/subjects/view_model/subjects_view_model.dart';
 
 class _FakeTaskRepository implements TaskRepository {
   @override
@@ -29,10 +29,10 @@ void main() {
     tester,
   ) async {
     final repository = _FakeRepository();
-    final controller = SubjectsController(repository, _FakeTaskRepository());
+    final viewModel = SubjectsViewModel(repository, _FakeTaskRepository());
 
     await tester.pumpWidget(
-      MaterialApp(home: SubjectsPage(controller: controller)),
+      MaterialApp(home: SubjectsPage(viewModel: viewModel)),
     );
 
     expect(find.textContaining('okuma hatası'), findsOneWidget);

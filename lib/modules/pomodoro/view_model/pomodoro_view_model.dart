@@ -3,19 +3,36 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../../data/repositories/study_session_repository.dart';
+import '../../../data/repositories/subject_repository.dart';
 import '../../../data/repositories/user_settings_repository.dart';
+import '../../../models/subject.dart';
 
 enum PomodoroPhase { work, rest }
 
 enum PomodoroStatus { idle, running, paused }
 
-class PomodoroController extends ChangeNotifier {
+class PomodoroViewModel extends ChangeNotifier {
   final StudySessionRepository _sessions;
   final UserSettingsRepository _settings;
+  final SubjectRepository _subjectRepository;
   final DateTime Function() _now;
 
-  PomodoroController(this._sessions, this._settings, {DateTime Function()? now})
-    : _now = now ?? DateTime.now;
+  PomodoroViewModel(
+    this._sessions,
+    this._settings,
+    this._subjectRepository, {
+    DateTime Function()? now,
+  }) : _now = now ?? DateTime.now;
+
+  /// Ders seçicide gösterilecek tüm dersler.
+  List<Subject> get subjects => _subjectRepository.getAll();
+
+  Subject? findSubject(String id) {
+    for (final s in subjects) {
+      if (s.id == id) return s;
+    }
+    return null;
+  }
 
   PomodoroPhase _phase = PomodoroPhase.work;
   PomodoroStatus _status = PomodoroStatus.idle;
@@ -46,7 +63,7 @@ class PomodoroController extends ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
-  /// Saniyede bir tick() çağırır. Controller uygulama boyunca yaşadığı için
+  /// Saniyede bir tick() çağırır. ViewModel uygulama boyunca yaşadığı için
   /// kullanıcı başka sekmedeyken de sayaç işler.
   Timer? _ticker;
 

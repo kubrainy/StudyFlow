@@ -4,14 +4,14 @@ import 'package:intl/intl.dart';
 import '../../../core/widgets/modal_blur.dart';
 import '../../../models/subject.dart';
 import '../../../models/task.dart';
+import '../view_model/tasks_view_model.dart';
 import 'widgets/task_form.dart';
-import '../controller/tasks_controller.dart';
 
 /// Ekleme (task == null) ve düzenleme formunu alt panelde açar.
 /// [initialSubjectId] yeni görevde dersi önceden seçili getirir.
 Future<void> showTaskForm(
   BuildContext context,
-  TasksController controller,
+  TasksViewModel viewModel,
   List<Subject> subjects, {
   Task? task,
   String? initialSubjectId,
@@ -24,20 +24,20 @@ Future<void> showTaskForm(
           ? null
           : () async {
               if (!await confirmTaskDelete(sheetContext, task)) return;
-              await controller.delete(task.id);
+              await viewModel.delete(task.id);
               if (sheetContext.mounted) Navigator.of(sheetContext).pop();
             },
       initialSubjectId: initialSubjectId,
       subjects: subjects,
       onSubmit: (data) => task == null
-          ? controller.add(
+          ? viewModel.add(
               data.title,
               description: data.description,
               subjectId: data.subjectId,
               priority: data.priority,
               dueDate: data.dueDate,
             )
-          : controller.update(
+          : viewModel.update(
               task,
               title: data.title,
               description: data.description,
@@ -81,7 +81,7 @@ Future<bool> confirmTaskDelete(BuildContext context, Task task) async {
 /// Sola kaydırınca açılan erteleme seçenekleri.
 Future<void> showPostponeSheet(
   BuildContext context,
-  TasksController controller,
+  TasksViewModel viewModel,
   Task task,
 ) {
   final today = DateUtils.dateOnly(DateTime.now());
@@ -90,7 +90,7 @@ Future<void> showPostponeSheet(
     context: context,
     builder: (sheetContext) {
       Future<void> pick(DateTime date) async {
-        await controller.postpone(task, date);
+        await viewModel.postpone(task, date);
         if (sheetContext.mounted) Navigator.of(sheetContext).pop();
       }
 

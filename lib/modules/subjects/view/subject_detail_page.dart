@@ -8,14 +8,12 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../models/subject.dart';
-import '../controller/subjects_controller.dart';
-import '../../../data/repositories/subject_repository.dart';
-import 'subject_actions.dart';
-import '../../../data/repositories/task_repository.dart';
 import '../../../models/task.dart';
 import '../../tasks/view/task_actions.dart';
 import '../../tasks/view/widgets/task_card.dart';
-import '../../tasks/controller/tasks_controller.dart';
+import '../../tasks/view_model/tasks_view_model.dart';
+import '../view_model/subjects_view_model.dart';
+import 'subject_actions.dart';
 
 class SubjectDetailPage extends StatelessWidget {
   const SubjectDetailPage({super.key, required this.subjectId});
@@ -24,23 +22,23 @@ class SubjectDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = inject<SubjectsController>();
-    final tasksController = inject<TasksController>();
+    final viewModel = inject<SubjectsViewModel>();
+    final tasksViewModel = inject<TasksViewModel>();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Ders detayı')),
       body: ListenableBuilder(
-        listenable: Listenable.merge([controller, tasksController]),
+        listenable: Listenable.merge([viewModel, tasksViewModel]),
         builder: (context, _) {
-          final subject = controller.findById(subjectId);
+          final subject = viewModel.findById(subjectId);
           if (subject == null) {
             return const AppEmptyView(
               icon: Icons.search_off_outlined,
               title: 'Ders bulunamadı',
             );
           }
-          final tasks = inject<TaskRepository>().getBySubjectId(subjectId);
-          return _buildContent(context, subject, tasks, tasksController);
+          final tasks = tasksViewModel.tasksOf(subjectId);
+          return _buildContent(context, subject, tasks, tasksViewModel);
         },
       ),
     );
@@ -50,7 +48,7 @@ class SubjectDetailPage extends StatelessWidget {
     BuildContext context,
     Subject subject,
     List<Task> tasks,
-    TasksController tasksController,
+    TasksViewModel tasksViewModel,
   ) {
     final description = subject.description;
 
@@ -60,7 +58,7 @@ class SubjectDetailPage extends StatelessWidget {
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () =>
-              showSubjectForm(context, inject<SubjectsController>(), subject),
+              showSubjectForm(context, inject<SubjectsViewModel>(), subject),
           child: AppCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -152,12 +150,12 @@ class SubjectDetailPage extends StatelessWidget {
         for (final task in tasks) ...[
           TaskCard(
             task: task,
-            onToggle: () => tasksController.toggleCompleted(task),
-            onPostpone: () => showPostponeSheet(context, tasksController, task),
+            onToggle: () => tasksViewModel.toggleCompleted(task),
+            onPostpone: () => showPostponeSheet(context, tasksViewModel, task),
             onTap: () => showTaskForm(
               context,
-              tasksController,
-              inject<SubjectRepository>().getAll(),
+              tasksViewModel,
+              tasksViewModel.subjects,
               task: task,
             ),
           ),
@@ -173,8 +171,8 @@ class SubjectDetailPage extends StatelessWidget {
             ),
             onPressed: () => showTaskForm(
               context,
-              tasksController,
-              inject<SubjectRepository>().getAll(),
+              tasksViewModel,
+              tasksViewModel.subjects,
               initialSubjectId: subject.id,
             ),
           ),

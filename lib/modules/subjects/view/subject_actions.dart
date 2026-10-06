@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../../core/widgets/modal_blur.dart';
 import '../../../models/subject.dart';
+import '../view_model/subjects_view_model.dart';
 import 'widgets/subject_form.dart';
-import '../controller/subjects_controller.dart';
 
 /// Ekleme (subject == null) ve düzenleme formunu alt panelde açar.
 Future<void> showSubjectForm(
   BuildContext context,
-  SubjectsController controller, [
+  SubjectsViewModel viewModel, [
   Subject? subject,
 ]) {
   return showBlurredSheet<void>(
@@ -16,8 +16,8 @@ Future<void> showSubjectForm(
     builder: (_) => SubjectForm(
       subject: subject,
       onSubmit: (name, description) => subject == null
-          ? controller.add(name, description)
-          : controller.update(subject, name, description),
+          ? viewModel.add(name, description)
+          : viewModel.update(subject, name, description),
     ),
   );
 }

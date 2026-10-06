@@ -1,10 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:studyflow/data/repositories/subject_repository.dart';
 import 'package:studyflow/data/repositories/task_repository.dart';
 import 'package:studyflow/models/task.dart';
-import 'package:studyflow/modules/tasks/controller/tasks_controller.dart';
+import 'package:studyflow/modules/tasks/view_model/tasks_view_model.dart';
 
 class MockTaskRepository extends Mock implements TaskRepository {}
+
+class MockSubjectRepository extends Mock implements SubjectRepository {}
 
 Task _task(
   String id,
@@ -24,42 +27,44 @@ Task _task(
 
 void main() {
   late MockTaskRepository repository;
-  late TasksController controller;
+  late MockSubjectRepository subjectRepository;
+  late TasksViewModel viewModel;
 
   setUp(() {
     repository = MockTaskRepository();
-    controller = TasksController(repository);
+    subjectRepository = MockSubjectRepository();
+    viewModel = TasksViewModel(repository, subjectRepository);
   });
 
   group('load', () {
     test('başlangıç durumu loading', () {
-      expect(controller.status, TasksStatus.loading);
+      expect(viewModel.status, TasksStatus.loading);
     });
 
     test('görev yoksa empty olur', () {
       when(() => repository.getAll()).thenReturn([]);
 
-      controller.load();
+      viewModel.load();
 
-      expect(controller.status, TasksStatus.empty);
+      expect(viewModel.status, TasksStatus.empty);
     });
 
     test('görev varsa success olur', () {
       when(() => repository.getAll()).thenReturn([_task('1', 'Ödev')]);
 
-      controller.load();
+      viewModel.load();
 
-      expect(controller.status, TasksStatus.success);
-      expect(controller.visibleTasks.length, 1);
+      expect(viewModel.status, TasksStatus.success);
+      expect(viewModel.visibleTasks.length, 1);
     });
 
     test('okuma hatasında error olur ve mesaj tutulur', () {
       when(() => repository.getAll()).thenThrow(Exception('okuma hatası'));
 
-      controller.load();
+      viewModel.load();
 
-      expect(controller.status, TasksStatus.error);
-      expect(controller.errorMessage, contains('okuma hatası'));
+      expect(viewModel.status, TasksStatus.error);
+      expect(viewModel.errorMessage, contains('okuma hatası'));
     });
   });
 
@@ -70,38 +75,38 @@ void main() {
         _task('2', 'Kitap oku', isCompleted: true, subjectId: 'edb'),
         _task('3', 'Integral tekrarı', subjectId: 'mat'),
       ]);
-      controller.load();
+      viewModel.load();
     });
 
     test('filtre active sadece bekleyenleri gösterir', () {
-      controller.setFilter(TaskFilter.active);
+      viewModel.setFilter(TaskFilter.active);
 
-      expect(controller.visibleTasks.map((t) => t.id), ['1', '3']);
+      expect(viewModel.visibleTasks.map((t) => t.id), ['1', '3']);
     });
 
     test('filtre completed sadece tamamlananları gösterir', () {
-      controller.setFilter(TaskFilter.completed);
+      viewModel.setFilter(TaskFilter.completed);
 
-      expect(controller.visibleTasks.map((t) => t.id), ['2']);
+      expect(viewModel.visibleTasks.map((t) => t.id), ['2']);
     });
 
     test('arama büyük küçük harfe bakmaz', () {
-      controller.setQuery('TÜREV');
+      viewModel.setQuery('TÜREV');
 
-      expect(controller.visibleTasks.map((t) => t.id), ['1']);
+      expect(viewModel.visibleTasks.map((t) => t.id), ['1']);
     });
 
     test('ders seçilince sadece o dersin görevleri gelir', () {
-      controller.setSubjectId('mat');
+      viewModel.setSubjectId('mat');
 
-      expect(controller.visibleTasks.map((t) => t.id), ['1', '3']);
+      expect(viewModel.visibleTasks.map((t) => t.id), ['1', '3']);
     });
 
     test('sonuç boş olsa da durum success kalır', () {
-      controller.setQuery('olmayan bir şey');
+      viewModel.setQuery('olmayan bir şey');
 
-      expect(controller.visibleTasks, isEmpty);
-      expect(controller.status, TasksStatus.success);
+      expect(viewModel.visibleTasks, isEmpty);
+      expect(viewModel.status, TasksStatus.success);
     });
   });
 
@@ -113,9 +118,9 @@ void main() {
         _task('uzak', 'C', dueDate: DateTime(2026, 10, 20)),
         _task('yakin', 'D', dueDate: DateTime(2026, 10, 5)),
       ]);
-      controller.load();
+      viewModel.load();
 
-      expect(controller.visibleTasks.map((t) => t.id), [
+      expect(viewModel.visibleTasks.map((t) => t.id), [
         'yakin',
         'uzak',
         'tarihsiz',
@@ -131,7 +136,7 @@ void main() {
       when(() => repository.setCompleted(task, true))
           .thenAnswer((_) async => task.copyWith(isCompleted: true));
 
-      await controller.toggleCompleted(task);
+      await viewModel.toggleCompleted(task);
 
       verify(() => repository.setCompleted(task, true)).called(1);
       verify(() => repository.getAll()).called(1);
@@ -141,10 +146,10 @@ void main() {
       when(() => repository.getAll()).thenReturn([]);
       when(() => repository.delete('1')).thenAnswer((_) async {});
 
-      await controller.delete('1');
+      await viewModel.delete('1');
 
       verify(() => repository.delete('1')).called(1);
-      expect(controller.status, TasksStatus.empty);
+      expect(viewModel.status, TasksStatus.empty);
     });
   });
 }

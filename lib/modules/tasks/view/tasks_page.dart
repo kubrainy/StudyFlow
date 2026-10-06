@@ -7,12 +7,11 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../core/widgets/app_buttons.dart';
 import '../../../core/widgets/app_widgets.dart';
-import '../../../data/repositories/subject_repository.dart';
 import '../../../models/subject.dart';
 import '../../../models/task.dart';
+import '../view_model/tasks_view_model.dart';
 import 'task_actions.dart';
 import 'widgets/task_card.dart';
-import '../controller/tasks_controller.dart';
 
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
@@ -22,7 +21,7 @@ class TasksPage extends StatefulWidget {
 }
 
 class _TasksPageState extends State<TasksPage> {
-  late final TasksController _controller;
+  late final TasksViewModel _viewModel;
 
   final _searchController = TextEditingController();
   bool _searching = false;
@@ -37,32 +36,24 @@ class _TasksPageState extends State<TasksPage> {
     setState(() => _searching = !_searching);
     if (!_searching) {
       _searchController.clear();
-      _controller.setQuery('');
+      _viewModel.setQuery('');
     }
   }
 
   @override
   void initState() {
     super.initState();
-    _controller = inject<TasksController>();
-    _controller.load();
+    _viewModel = inject<TasksViewModel>();
+    _viewModel.load();
   }
 
-  Map<String, String> _subjectNames() => {
-    for (final s in inject<SubjectRepository>().getAll()) s.id: s.name,
-  };
-
-  Future<void> _openForm([Task? task]) => showTaskForm(
-    context,
-    _controller,
-    inject<SubjectRepository>().getAll(),
-    task: task,
-  );
+  Future<void> _openForm([Task? task]) =>
+      showTaskForm(context, _viewModel, _viewModel.subjects, task: task);
 
   Future<void> _confirmDelete(Task task) async {
     if (!await confirmTaskDelete(context, task)) return;
 
-    await _controller.delete(task.id);
+    await _viewModel.delete(task.id);
     if (!mounted) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('Görev silindi')));
@@ -76,7 +67,7 @@ class _TasksPageState extends State<TasksPage> {
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
-                onChanged: _controller.setQuery,
+                onChanged: _viewModel.setQuery,
                 decoration: const InputDecoration(
                   hintText: 'Görev ara',
                   filled: false,
@@ -101,12 +92,12 @@ class _TasksPageState extends State<TasksPage> {
         child: AppFab(icon: Icons.add, onPressed: _openForm),
       ),
       body: ListenableBuilder(
-        listenable: _controller,
-        builder: (context, _) => switch (_controller.status) {
+        listenable: _viewModel,
+        builder: (context, _) => switch (_viewModel.status) {
           TasksStatus.loading => const AppLoadingView(),
           TasksStatus.error => AppErrorView(
-            message: _controller.errorMessage ?? 'Bir hata oluştu',
-            onRetry: _controller.load,
+            message: _viewModel.errorMessage ?? 'Bir hata oluştu',
+            onRetry: _viewModel.load,
           ),
           TasksStatus.empty => const AppEmptyView(
             icon: Icons.check_circle_outline,
@@ -116,8 +107,8 @@ class _TasksPageState extends State<TasksPage> {
           TasksStatus.success => Column(
             children: [
               _FilterBar(
-                controller: _controller,
-                subjects: inject<SubjectRepository>().getAll(),
+                viewModel: _viewModel,
+                subjects: _viewModel.subjects,
               ),
               Expanded(child: _buildList(context)),
             ],
@@ -128,7 +119,7 @@ class _TasksPageState extends State<TasksPage> {
   }
 
   Widget _buildList(BuildContext context) {
-    final tasks = _controller.visibleTasks;
+    final tasks = _viewModel.visibleTasks;
     if (tasks.isEmpty) {
       return const AppEmptyView(
         icon: Icons.search_off_outlined,
@@ -136,7 +127,7 @@ class _TasksPageState extends State<TasksPage> {
       );
     }
 
-    final names = _subjectNames();
+    final names = _viewModel.subjectNames;
     final columns = Responsive.columns(context);
     final padding = AppSpacing.pagePadding(Responsive.widthOf(context));
 
@@ -145,10 +136,10 @@ class _TasksPageState extends State<TasksPage> {
       return TaskCard(
         task: task,
         subjectName: names[task.subjectId],
-        onToggle: () => _controller.toggleCompleted(task),
+        onToggle: () => _viewModel.toggleCompleted(task),
         onTap: () => _openForm(task),
         onLongPress: () => _confirmDelete(task),
-        onPostpone: () => showPostponeSheet(context, _controller, task),
+        onPostpone: () => showPostponeSheet(context, _viewModel, task),
       );
     }
 
@@ -176,9 +167,9 @@ class _TasksPageState extends State<TasksPage> {
 }
 
 class _FilterBar extends StatelessWidget {
-  const _FilterBar({required this.controller, required this.subjects});
+  const _FilterBar({required this.viewModel, required this.subjects});
 
-  final TasksController controller;
+  final TasksViewModel viewModel;
   final List<Subject> subjects;
 
   @override
@@ -201,8 +192,8 @@ class _FilterBar extends StatelessWidget {
           for (final (filter, label) in statuses) ...[
             _FilterChip(
               label: label,
-              selected: controller.filter == filter,
-              onTap: () => controller.setFilter(filter),
+              selected: viewModel.filter == filter,
+              onTap: () => viewModel.setFilter(filter),
             ),
             const SizedBox(width: AppSpacing.sm),
           ],
@@ -211,9 +202,9 @@ class _FilterBar extends StatelessWidget {
           for (final subject in subjects) ...[
             _FilterChip(
               label: subject.name,
-              selected: controller.subjectId == subject.id,
-              onTap: () => controller.setSubjectId(
-                controller.subjectId == subject.id ? null : subject.id,
+              selected: viewModel.subjectId == subject.id,
+              onTap: () => viewModel.setSubjectId(
+                viewModel.subjectId == subject.id ? null : subject.id,
               ),
             ),
             const SizedBox(width: AppSpacing.sm),

@@ -1,16 +1,19 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../data/repositories/subject_repository.dart';
 import '../../../data/repositories/task_repository.dart';
+import '../../../models/subject.dart';
 import '../../../models/task.dart';
 
 enum TasksStatus { loading, empty, error, success }
 
 enum TaskFilter { all, active, completed }
 
-class TasksController extends ChangeNotifier {
+class TasksViewModel extends ChangeNotifier {
   final TaskRepository _repository;
+  final SubjectRepository _subjectRepository;
 
-  TasksController(this._repository);
+  TasksViewModel(this._repository, this._subjectRepository);
 
   List<Task> _tasks = [];
   TasksStatus _status = TasksStatus.loading;
@@ -24,6 +27,18 @@ class TasksController extends ChangeNotifier {
   String get query => _query;
   TaskFilter get filter => _filter;
   String? get subjectId => _subjectId;
+
+  /// Form ve filtre çubuğu için tüm dersler.
+  List<Subject> get subjects => _subjectRepository.getAll();
+
+  /// Ders id'sinden ders adına harita (kartlarda göstermek için).
+  Map<String, String> get subjectNames => {
+    for (final s in subjects) s.id: s.name,
+  };
+
+  /// Bir dersin görevleri (ders detay sayfası için).
+  List<Task> tasksOf(String subjectId) =>
+      _repository.getBySubjectId(subjectId);
 
   /// Ekranda gösterilecek liste: filtre, ders ve arama uygulanmış, sıralı.
   List<Task> get visibleTasks {

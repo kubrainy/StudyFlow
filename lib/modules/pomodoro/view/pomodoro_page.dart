@@ -8,9 +8,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../core/widgets/duration_stepper.dart';
-import '../../../data/repositories/subject_repository.dart';
-import '../../../models/subject.dart';
-import '../controller/pomodoro_controller.dart';
+import '../view_model/pomodoro_view_model.dart';
 import 'widgets/pomodoro_controls.dart';
 import 'widgets/pomodoro_ring.dart';
 import 'widgets/pomodoro_sizes.dart';
@@ -24,48 +22,39 @@ class PomodoroPage extends StatefulWidget {
 }
 
 class _PomodoroPageState extends State<PomodoroPage> {
-  late final PomodoroController _controller;
+  late final PomodoroViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
-    _controller = inject<PomodoroController>();
+    _viewModel = inject<PomodoroViewModel>();
 
     // Seçili ders sonradan silinmişse (Dersler sekmesinden) serbest çalışmaya dön.
-    final id = _controller.subjectId;
-    if (id != null && _subjectById(id) == null) {
-      _controller.selectSubject(null);
+    final id = _viewModel.subjectId;
+    if (id != null && _viewModel.findSubject(id) == null) {
+      _viewModel.selectSubject(null);
     }
-  }
-
-  List<Subject> _subjects() => inject<SubjectRepository>().getAll();
-
-  Subject? _subjectById(String id) {
-    for (final s in _subjects()) {
-      if (s.id == id) return s;
-    }
-    return null;
   }
 
   Future<void> _pickSubject() async {
     final choice = await showPomodoroSubjectPicker(
       context,
-      subjects: _subjects(),
-      selectedId: _controller.subjectId,
-      todayMinutesOf: _controller.todayMinutes,
+      subjects: _viewModel.subjects,
+      selectedId: _viewModel.subjectId,
+      todayMinutesOf: _viewModel.todayMinutes,
     );
-    if (choice != null) _controller.selectSubject(choice.id);
+    if (choice != null) _viewModel.selectSubject(choice.id);
   }
 
   /// Bitir: geçen dakikalar kaydedilir ve ne olduğu kullanıcıya söylenir.
   Future<void> _finish() async {
-    final minutes = _controller.elapsed.inMinutes;
-    final saves = minutes >= PomodoroController.minSavedMinutes;
-    await _controller.finishEarly();
-    if (!mounted || _controller.errorMessage != null) return;
+    final minutes = _viewModel.elapsed.inMinutes;
+    final saves = minutes >= PomodoroViewModel.minSavedMinutes;
+    await _viewModel.finishEarly();
+    if (!mounted || _viewModel.errorMessage != null) return;
     final text = saves
         ? '$minutes dk kaydedildi'
-        : '${PomodoroController.minSavedMinutes} dakikadan kısa, kaydedilmedi';
+        : '${PomodoroViewModel.minSavedMinutes} dakikadan kısa, kaydedilmedi';
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(text)));
@@ -77,7 +66,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
     return '$m:$s';
   }
 
-  String _ringLabel(PomodoroController c) {
+  String _ringLabel(PomodoroViewModel c) {
     if (c.status == PomodoroStatus.idle) return 'Hazır';
     if (c.status == PomodoroStatus.paused) return 'Duraklatıldı';
     return c.phase == PomodoroPhase.work ? 'Odaklan' : 'Mola';
@@ -100,11 +89,11 @@ class _PomodoroPageState extends State<PomodoroPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Pomodoro')),
       body: ListenableBuilder(
-        listenable: _controller,
+        listenable: _viewModel,
         builder: (context, _) {
-          final c = _controller;
+          final c = _viewModel;
           final id = c.subjectId;
-          final subjectName = id == null ? null : _subjectById(id)?.name;
+          final subjectName = id == null ? null : _viewModel.findSubject(id)?.name;
 
           return LayoutBuilder(
             builder: (context, box) => SingleChildScrollView(

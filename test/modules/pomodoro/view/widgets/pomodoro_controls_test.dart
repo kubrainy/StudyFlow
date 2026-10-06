@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studyflow/core/theme/app_colors.dart';
-import 'package:studyflow/modules/pomodoro/controller/pomodoro_controller.dart';
 import 'package:studyflow/modules/pomodoro/view/widgets/pomodoro_controls.dart';
 import 'package:studyflow/modules/pomodoro/view/widgets/pomodoro_ring.dart';
+import 'package:studyflow/modules/pomodoro/view_model/pomodoro_view_model.dart';
 
 Future<void> _pumpCircle(
   WidgetTester tester, {

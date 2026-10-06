@@ -6,36 +6,36 @@ import '../../../core/utils/responsive.dart';
 import '../../../core/widgets/app_buttons.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../models/subject.dart';
+import '../view_model/subjects_view_model.dart';
 import 'subject_actions.dart';
 import 'widgets/subject_card.dart';
-import '../controller/subjects_controller.dart';
 
 class SubjectsPage extends StatefulWidget {
-  const SubjectsPage({super.key, this.controller});
+  const SubjectsPage({super.key, this.viewModel});
 
-  final SubjectsController? controller;
+  final SubjectsViewModel? viewModel;
 
   @override
   State<SubjectsPage> createState() => _SubjectsPageState();
 }
 
 class _SubjectsPageState extends State<SubjectsPage> {
-  late final SubjectsController _controller;
+  late final SubjectsViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
-    _controller = widget.controller ?? inject<SubjectsController>();
-    _controller.load();
+    _viewModel = widget.viewModel ?? inject<SubjectsViewModel>();
+    _viewModel.load();
   }
 
   Future<void> _openForm([Subject? subject]) =>
-      showSubjectForm(context, _controller, subject);
+      showSubjectForm(context, _viewModel, subject);
 
   Future<void> _confirmDelete(Subject subject) async {
     if (!await confirmSubjectDelete(context, subject)) return;
 
-    await _controller.delete(subject.id);
+    await _viewModel.delete(subject.id);
     if (!mounted) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('Ders silindi')));
@@ -50,12 +50,12 @@ class _SubjectsPageState extends State<SubjectsPage> {
         child: AppFab(icon: Icons.add, onPressed: _openForm),
       ),
       body: ListenableBuilder(
-        listenable: _controller,
-        builder: (context, _) => switch (_controller.status) {
+        listenable: _viewModel,
+        builder: (context, _) => switch (_viewModel.status) {
           SubjectsStatus.loading => const AppLoadingView(),
           SubjectsStatus.error => AppErrorView(
-            message: _controller.errorMessage ?? 'Bir hata oluştu',
-            onRetry: _controller.load,
+            message: _viewModel.errorMessage ?? 'Bir hata oluştu',
+            onRetry: _viewModel.load,
           ),
           SubjectsStatus.empty => const AppEmptyView(
             icon: Icons.menu_book_outlined,
@@ -71,10 +71,10 @@ class _SubjectsPageState extends State<SubjectsPage> {
   Widget _buildList(BuildContext context) {
     final columns = Responsive.columns(context);
     final padding = AppSpacing.pagePadding(Responsive.widthOf(context));
-    final subjects = _controller.subjects;
+    final subjects = _viewModel.subjects;
 
     Widget cardAt(int i) {
-      final progress = _controller.taskProgress(subjects[i].id);
+      final progress = _viewModel.taskProgress(subjects[i].id);
       return SubjectCard(
         subject: subjects[i],
         totalTasks: progress.total,

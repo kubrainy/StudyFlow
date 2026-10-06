@@ -6,11 +6,11 @@ import '../../../models/subject.dart';
 
 enum SubjectsStatus { loading, empty, error, success }
 
-class SubjectsController extends ChangeNotifier {
+class SubjectsViewModel extends ChangeNotifier {
   final SubjectRepository _repository;
   final TaskRepository _taskRepository;
 
-  SubjectsController(this._repository, this._taskRepository);
+  SubjectsViewModel(this._repository, this._taskRepository);
 
   List<Subject> _subjects = [];
   SubjectsStatus _status = SubjectsStatus.loading;
