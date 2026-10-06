@@ -1,6 +1,6 @@
 import 'package:flutter_modular/flutter_modular.dart';
 
-import 'statistics_page.dart';
+import 'view/statistics_page.dart';
 
 final statisticsModule = createModule(
   register: (c) {

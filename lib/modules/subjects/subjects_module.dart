@@ -2,9 +2,9 @@ import 'package:flutter_modular/flutter_modular.dart';
 
 import '../../data/local/subject_local_source.dart';
 import '../../data/repositories/subject_repository.dart';
-import 'subjects_controller.dart';
-import 'subjects_page.dart';
-import 'subject_detail_page.dart';
+import 'controller/subjects_controller.dart';
+import 'view/subjects_page.dart';
+import 'view/subject_detail_page.dart';
 
 final subjectsModule = createModule(
   register: (c) {

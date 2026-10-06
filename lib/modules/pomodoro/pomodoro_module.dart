@@ -1,9 +1,9 @@
 import 'package:flutter_modular/flutter_modular.dart';
 
-import 'pomodoro_controller.dart';
+import 'controller/pomodoro_controller.dart';
 import '../../data/local/study_session_local_source.dart';
 import '../../data/repositories/study_session_repository.dart';
-import 'pomodoro_page.dart';
+import 'view/pomodoro_page.dart';
 
 final pomodoroModule = createModule(
   register: (c) {

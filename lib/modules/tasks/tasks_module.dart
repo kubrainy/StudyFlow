@@ -2,8 +2,8 @@ import 'package:flutter_modular/flutter_modular.dart';
 
 import '../../data/local/task_local_source.dart';
 import '../../data/repositories/task_repository.dart';
-import 'tasks_page.dart';
-import 'tasks_controller.dart';
+import 'view/tasks_page.dart';
+import 'controller/tasks_controller.dart';
 
 final tasksModule = createModule(
   register: (c) {

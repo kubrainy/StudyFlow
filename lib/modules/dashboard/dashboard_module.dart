@@ -1,6 +1,6 @@
 import 'package:flutter_modular/flutter_modular.dart';
 
-import 'dashboard_page.dart';
+import 'view/dashboard_page.dart';
 
 final dashboardModule = createModule(
   register: (c) {
