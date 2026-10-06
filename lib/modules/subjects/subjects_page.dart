@@ -11,7 +11,10 @@ import 'subject_card.dart';
 import 'subjects_controller.dart';
 
 class SubjectsPage extends StatefulWidget {
-  const SubjectsPage({super.key});
+  const SubjectsPage({super.key, this.controller});
+
+  /// Verilmezse modülden alınır; testlerde sahte controller vermek için.
+  final SubjectsController? controller;
 
   @override
   State<SubjectsPage> createState() => _SubjectsPageState();
@@ -23,7 +26,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
   @override
   void initState() {
     super.initState();
-    _controller = inject<SubjectsController>();
+    _controller = widget.controller ?? inject<SubjectsController>();
     _controller.load();
   }
 

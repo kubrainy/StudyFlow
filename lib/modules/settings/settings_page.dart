@@ -6,12 +6,8 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ayarlar'),
-      ),
-      body: const Center(
-        child: Text('Ayarlar Sayfası'),
-      ),
+      appBar: AppBar(title: const Text('Ayarlar')),
+      body: const Center(child: Text('Ayarlar Sayfası')),
     );
   }
 }

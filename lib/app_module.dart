@@ -22,6 +22,5 @@ final appModule = createModule(
       },
     );
     c.module(settingsModule);
-
   },
 );

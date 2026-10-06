@@ -43,5 +43,4 @@ class StudySessionRepository {
     );
     return session;
   }
-
 }

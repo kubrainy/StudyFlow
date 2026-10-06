@@ -21,11 +21,7 @@ Future<void> _pumpCard(
   return tester.pumpWidget(
     MaterialApp(
       home: Scaffold(
-        body: SubjectCard(
-          subject: subject,
-          onEdit: onEdit,
-          onDelete: onDelete,
-        ),
+        body: SubjectCard(subject: subject, onEdit: onEdit, onDelete: onDelete),
       ),
     ),
   );

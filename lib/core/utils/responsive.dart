@@ -17,13 +17,11 @@ abstract final class Responsive {
     return 3;
   }
 
-  static TextStyle headlineXl(BuildContext context) =>
-      isMobile(context)
-          ? AppTextStyles.headlineXlMobile
-          : AppTextStyles.headlineXl;
+  static TextStyle headlineXl(BuildContext context) => isMobile(context)
+      ? AppTextStyles.headlineXlMobile
+      : AppTextStyles.headlineXl;
 
-  static TextStyle timerDisplay(BuildContext context) =>
-      isMobile(context)
-          ? AppTextStyles.timerDisplayMobile
-          : AppTextStyles.timerDisplay;
+  static TextStyle timerDisplay(BuildContext context) => isMobile(context)
+      ? AppTextStyles.timerDisplayMobile
+      : AppTextStyles.timerDisplay;
 }

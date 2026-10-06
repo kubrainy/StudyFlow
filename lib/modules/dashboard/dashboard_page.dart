@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
-
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-      return Scaffold(
+    return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
@@ -19,6 +18,5 @@ class DashboardPage extends StatelessWidget {
       ),
       body: const Center(child: Text('Dashboard Page')),
     );
-
   }
 }

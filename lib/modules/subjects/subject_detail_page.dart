@@ -95,9 +95,21 @@ class SubjectDetailPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.md),
-        Text(
-          'Oluşturulma: ${DateFormat('d.MM.yyyy').format(subject.createdAt)}',
-          style: Theme.of(context).textTheme.bodyMedium,
+        Row(
+          children: [
+            const Icon(
+              Icons.calendar_today_outlined,
+              size: AppIconSize.chip,
+              color: AppColors.textSecondary,
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Text(
+              'Oluşturulma: ${DateFormat('d.MM.yyyy').format(subject.createdAt)}',
+              style: AppTextStyles.bodyMd.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
         ),
       ],
     );
