@@ -14,14 +14,18 @@ class TaskCard extends StatelessWidget {
     this.subjectName,
     this.onToggle,
     this.onTap,
-    this.onDelete,
+    this.onLongPress,
+    this.onPostpone,
   });
 
   final Task task;
   final String? subjectName;
   final VoidCallback? onToggle;
   final VoidCallback? onTap;
-  final VoidCallback? onDelete;
+  final VoidCallback? onLongPress;
+
+  /// Sola kaydırınca çağrılır; null ise sola kaydırma kapalıdır.
+  final VoidCallback? onPostpone;
 
   @override
   Widget build(BuildContext context) {
@@ -32,81 +36,140 @@ class TaskCard extends StatelessWidget {
         !task.isCompleted &&
         dueDate.isBefore(DateUtils.dateOnly(DateTime.now()));
 
-    return GestureDetector(
+    final card = GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       behavior: HitTestBehavior.opaque,
-      child: AppCard(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        child: Stack(
           children: [
-            _TaskCheckbox(checked: task.isCompleted, onTap: onToggle),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    task.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.bodyLg.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: task.isCompleted
-                          ? AppColors.textDisabled
-                          : AppColors.textPrimary,
-                      decoration: task.isCompleted
-                          ? TextDecoration.lineThrough
-                          : null,
-                    ),
-                  ),
-                  if (subject != null) ...[
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      subject,
-                      style: AppTextStyles.bodyMd.copyWith(
-                        color: AppColors.textSecondary,
+            AppCard(
+              child: Padding(
+                padding: const EdgeInsets.only(left: AppSpacing.xs),
+                child: Row(
+                  children: [
+                    _TaskCheckbox(checked: task.isCompleted, onTap: onToggle),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            task.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.bodyLg.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: task.isCompleted
+                                  ? AppColors.textDisabled
+                                  : AppColors.textPrimary,
+                              decoration: task.isCompleted
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                            ),
+                          ),
+                          if (subject != null) ...[
+                            const SizedBox(height: AppSpacing.xs),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.menu_book_outlined,
+                                  size: AppIconSize.chip,
+                                  color: task.isCompleted
+                                      ? AppColors.textDisabled
+                                      : AppColors.textSecondary,
+                                ),
+                                const SizedBox(width: AppSpacing.xs),
+                                Flexible(
+                                  child: Text(
+                                    subject,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTextStyles.bodyMd.copyWith(
+                                      color: task.isCompleted
+                                          ? AppColors.textDisabled
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                  ],
-                  const SizedBox(height: AppSpacing.sm),
-                  Wrap(
-                    spacing: AppSpacing.sm,
-                    runSpacing: AppSpacing.sm,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      _priorityChip(task.priority),
-                      if (dueDate != null) _dueDate(dueDate, isOverdue),
+                    if (dueDate != null) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      _dueDate(dueDate, isOverdue),
                     ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-            if (onDelete != null)
-              IconButton(
-                tooltip: 'Sil',
-                icon: const Icon(Icons.delete_outline),
-                onPressed: onDelete,
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 5,
+              child: ColoredBox(
+                key: const Key('priority-stripe'),
+                color: _stripeColor(),
               ),
+            ),
           ],
         ),
       ),
     );
+
+    if (onToggle == null && onPostpone == null) return card;
+
+    // Kart yerinden silinmez: işlem yapılır, kart geri yaylanır, liste yenilenir.
+    return Dismissible(
+      key: ValueKey('task-${task.id}'),
+      direction: onToggle != null && onPostpone != null
+          ? DismissDirection.horizontal
+          : onToggle != null
+          ? DismissDirection.startToEnd
+          : DismissDirection.endToStart,
+      background: const _SwipeBackground(
+        color: AppColors.secondary,
+        icon: Icons.check,
+        alignment: Alignment.centerLeft,
+      ),
+      secondaryBackground: const _SwipeBackground(
+        color: AppColors.warning,
+        icon: Icons.event_repeat_outlined,
+        alignment: Alignment.centerRight,
+      ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          onToggle?.call();
+        } else {
+          onPostpone?.call();
+        }
+        return false;
+      },
+      child: card,
+    );
   }
 
-  Widget _priorityChip(TaskPriority priority) => switch (priority) {
-    TaskPriority.high => const AppChip(label: 'Yüksek', type: AppChipType.high),
-    TaskPriority.medium => const AppChip(
-      label: 'Orta',
-      type: AppChipType.focus,
-    ),
-    TaskPriority.low => const AppChip(
-      label: 'Düşük',
-      type: AppChipType.neutral,
-    ),
-  };
+  /// Tamamlandıysa yeşil, değilse önceliğe göre kırmızı / indigo / gri.
+  Color _stripeColor() {
+    if (task.isCompleted) return AppColors.secondary;
+    return switch (task.priority) {
+      TaskPriority.high => AppColors.danger,
+      TaskPriority.medium => AppColors.primary,
+      TaskPriority.low => AppColors.textDisabled,
+    };
+  }
 
   Widget _dueDate(DateTime dueDate, bool isOverdue) {
-    final color = isOverdue ? AppColors.danger : AppColors.textSecondary;
+    final color = task.isCompleted
+        ? AppColors.textDisabled
+        : isOverdue
+        ? AppColors.danger
+        : AppColors.textSecondary;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -117,8 +180,11 @@ class TaskCard extends StatelessWidget {
         ),
         const SizedBox(width: AppSpacing.xs),
         Text(
-          DateFormat('d.MM.yyyy').format(dueDate),
-          style: AppTextStyles.bodyMd.copyWith(color: color),
+          DateFormat('d.MM').format(dueDate),
+          style: AppTextStyles.bodyMd.copyWith(
+            color: color,
+            fontWeight: isOverdue ? FontWeight.w600 : null,
+          ),
         ),
       ],
     );
@@ -155,6 +221,31 @@ class _TaskCheckbox extends StatelessWidget {
               : null,
         ),
       ),
+    );
+  }
+}
+
+class _SwipeBackground extends StatelessWidget {
+  const _SwipeBackground({
+    required this.color,
+    required this.icon,
+    required this.alignment,
+  });
+
+  final Color color;
+  final IconData icon;
+  final Alignment alignment;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+      ),
+      child: Icon(icon, color: AppColors.onPrimary),
     );
   }
 }

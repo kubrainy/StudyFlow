@@ -73,11 +73,19 @@ class _SubjectsPageState extends State<SubjectsPage> {
     final padding = AppSpacing.pagePadding(Responsive.widthOf(context));
     final subjects = _controller.subjects;
 
-    Widget cardAt(int i) => SubjectCard(
-      subject: subjects[i],
-      onTap: () => context.pushNamed('/subjects/${subjects[i].id}'),
-      onLongPress: () => _confirmDelete(subjects[i]),
-    );
+    Widget cardAt(int i) {
+      final progress = _controller.taskProgress(subjects[i].id);
+      return SubjectCard(
+        subject: subjects[i],
+        totalTasks: progress.total,
+        completedTasks: progress.completed,
+        onTap: () async {
+          await context.pushNamed('/subjects/${subjects[i].id}');
+          if (mounted) setState(() {});
+        },
+        onLongPress: () => _confirmDelete(subjects[i]),
+      );
+    }
 
     if (columns == 1) {
       return ListView.separated(

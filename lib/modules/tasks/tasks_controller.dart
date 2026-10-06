@@ -120,6 +120,10 @@ class TasksController extends ChangeNotifier {
     load();
   }
 
+  /// Görevin son tarihini [newDate] gününe taşır.
+  Future<void> postpone(Task task, DateTime newDate) =>
+      update(task, dueDate: DateTime(newDate.year, newDate.month, newDate.day));
+
   Future<void> delete(String id) async {
     await _repository.delete(id);
     load();

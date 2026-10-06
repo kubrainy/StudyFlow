@@ -17,12 +17,16 @@ Future<void> _pumpCard(
   Subject subject, {
   VoidCallback? onTap,
   VoidCallback? onLongPress,
+  int totalTasks = 0,
+  int completedTasks = 0,
 }) {
   return tester.pumpWidget(
     MaterialApp(
       home: Scaffold(
         body: SubjectCard(
           subject: subject,
+          totalTasks: totalTasks,
+          completedTasks: completedTasks,
           onTap: onTap,
           onLongPress: onLongPress,
         ),
@@ -47,10 +51,26 @@ void main() {
     expect(find.text('Türev ve integral'), findsNothing);
   });
 
-  testWidgets('solda ders ikonu gösterilir', (tester) async {
+  testWidgets('görev yoksa halkada kitap ikonu, yüzde yok', (tester) async {
     await _pumpCard(tester, _subject());
 
+    expect(find.byKey(const Key('subject-ring')), findsOneWidget);
     expect(find.byIcon(Icons.menu_book_outlined), findsOneWidget);
+    expect(find.textContaining('%'), findsNothing);
+  });
+
+  testWidgets('görev varsa halkada yüzde yazar', (tester) async {
+    await _pumpCard(tester, _subject(), totalTasks: 3, completedTasks: 2);
+
+    expect(find.text('67%'), findsOneWidget);
+    expect(find.byIcon(Icons.menu_book_outlined), findsNothing);
+  });
+
+  testWidgets('hepsi bittiyse halkada tik gösterilir', (tester) async {
+    await _pumpCard(tester, _subject(), totalTasks: 2, completedTasks: 2);
+
+    expect(find.byIcon(Icons.check), findsOneWidget);
+    expect(find.textContaining('%'), findsNothing);
   });
 
   testWidgets('dokununca onTap çağrılır', (tester) async {

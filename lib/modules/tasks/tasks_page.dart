@@ -95,7 +95,8 @@ class _TasksPageState extends State<TasksPage> {
         subjectName: names[task.subjectId],
         onToggle: () => _controller.toggleCompleted(task),
         onTap: () => _openForm(task),
-        onDelete: () => _confirmDelete(task),
+        onLongPress: () => _confirmDelete(task),
+        onPostpone: () => showPostponeSheet(context, _controller, task),
       );
     }
 

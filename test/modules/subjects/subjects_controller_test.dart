@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:studyflow/data/repositories/subject_repository.dart';
 import 'package:studyflow/data/repositories/task_repository.dart';
+import 'package:studyflow/models/task.dart';
 import 'package:studyflow/modules/subjects/subjects_controller.dart';
 
 class MockSubjectRepository extends Mock implements SubjectRepository {}
@@ -37,6 +38,36 @@ void main() {
 
       verify(() => subjects.getAll()).called(1);
       expect(controller.status, SubjectsStatus.empty);
+    });
+  });
+
+  group('SubjectsController.taskProgress', () {
+    Task task(String id, {bool done = false}) => Task(
+      id: id,
+      title: id,
+      isCompleted: done,
+      createdAt: DateTime(2026, 1, 1),
+      updatedAt: DateTime(2026, 1, 1),
+    );
+
+    test('toplam ve tamamlanan görev sayısını verir', () {
+      when(
+        () => tasks.getBySubjectId('ders-1'),
+      ).thenReturn([task('a', done: true), task('b'), task('c', done: true)]);
+
+      final progress = controller.taskProgress('ders-1');
+
+      expect(progress.total, 3);
+      expect(progress.completed, 2);
+    });
+
+    test('görev yoksa ikisi de sıfır', () {
+      when(() => tasks.getBySubjectId('ders-1')).thenReturn([]);
+
+      final progress = controller.taskProgress('ders-1');
+
+      expect(progress.total, 0);
+      expect(progress.completed, 0);
     });
   });
 }

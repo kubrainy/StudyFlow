@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/widgets/modal_blur.dart';
 import '../../models/subject.dart';
@@ -17,8 +18,15 @@ Future<void> showTaskForm(
 }) {
   return showBlurredSheet<void>(
     context: context,
-    builder: (_) => TaskForm(
+    builder: (sheetContext) => TaskForm(
       task: task,
+      onDelete: task == null
+          ? null
+          : () async {
+              if (!await confirmTaskDelete(sheetContext, task)) return;
+              await controller.delete(task.id);
+              if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+            },
       initialSubjectId: initialSubjectId,
       subjects: subjects,
       onSubmit: (data) => task == null
@@ -68,4 +76,54 @@ Future<bool> confirmTaskDelete(BuildContext context, Task task) async {
     ),
   );
   return confirmed == true;
+}
+
+/// Sola kaydırınca açılan erteleme seçenekleri.
+Future<void> showPostponeSheet(
+  BuildContext context,
+  TasksController controller,
+  Task task,
+) {
+  final today = DateUtils.dateOnly(DateTime.now());
+
+  return showBlurredSheet<void>(
+    context: context,
+    builder: (sheetContext) {
+      Future<void> pick(DateTime date) async {
+        await controller.postpone(task, date);
+        if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+      }
+
+      Widget option(String label, DateTime date) => ListTile(
+        title: Text(label),
+        trailing: Text(DateFormat('d.MM').format(date)),
+        onTap: () => pick(date),
+      );
+
+      return SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ListTile(title: Text('Ertele')),
+            option('Yarın', today.add(const Duration(days: 1))),
+            option('3 gün sonra', today.add(const Duration(days: 3))),
+            option('Haftaya', today.add(const Duration(days: 7))),
+            ListTile(
+              leading: const Icon(Icons.calendar_today_outlined),
+              title: const Text('Tarih seç'),
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: sheetContext,
+                  initialDate: task.dueDate ?? today,
+                  firstDate: DateTime(today.year - 1),
+                  lastDate: DateTime(today.year + 5),
+                );
+                if (picked != null) await pick(picked);
+              },
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }

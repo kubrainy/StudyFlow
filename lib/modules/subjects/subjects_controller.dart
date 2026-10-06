@@ -27,6 +27,15 @@ class SubjectsController extends ChangeNotifier {
     return null;
   }
 
+  /// Dersin görev sayısı ve tamamlananların sayısı (kart halkası için).
+  ({int total, int completed}) taskProgress(String subjectId) {
+    final tasks = _taskRepository.getBySubjectId(subjectId);
+    return (
+      total: tasks.length,
+      completed: tasks.where((t) => t.isCompleted).length,
+    );
+  }
+
   void load() {
     _status = SubjectsStatus.loading;
     notifyListeners();

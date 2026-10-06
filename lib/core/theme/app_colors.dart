@@ -35,6 +35,10 @@ abstract final class AppColors {
   static const doneBorder = Color(0xFFD1FAE5);
 
   // Timer
+  // Çalışma süresi çipi (tahmin, DESIGN.md renk vermiyor): cyan ailesi.
+  static const durationFill = Color(0xFFECFEFF);
+  static const durationBorder = Color(0xFFCFFAFE);
+  static const durationText = Color(0xFF0E7490);
   static const timerTrack = Color(0xFFEEF2FF);
   static const timerGradient = [primary, secondaryCyan];
 

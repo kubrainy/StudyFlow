@@ -117,7 +117,7 @@ class SubjectDetailPage extends StatelessWidget {
                   children: [
                     AppChip(
                       label: '${subject.totalStudyMinutes} dk çalışıldı',
-                      type: AppChipType.focus,
+                      type: AppChipType.duration,
                       icon: Icons.timer_outlined,
                     ),
                     Row(
@@ -153,6 +153,7 @@ class SubjectDetailPage extends StatelessWidget {
           TaskCard(
             task: task,
             onToggle: () => tasksController.toggleCompleted(task),
+            onPostpone: () => showPostponeSheet(context, tasksController, task),
             onTap: () => showTaskForm(
               context,
               tasksController,

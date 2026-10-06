@@ -35,6 +35,7 @@ class _AppPrimaryButtonState extends State<AppPrimaryButton> {
         scale: _pressed ? 0.98 : 1.0,
         duration: const Duration(milliseconds: 100),
         child: Container(
+          alignment: Alignment.center,
           padding: EdgeInsets.symmetric(
             horizontal: AppSpacing.lg,
             vertical: AppSpacing.md,
@@ -66,10 +67,14 @@ class AppSecondaryButton extends StatefulWidget {
     super.key,
     required this.label,
     required this.onPressed,
+    this.destructive = false,
   });
 
   final String label;
   final VoidCallback? onPressed;
+
+  /// Silme gibi geri alınamaz işlemlerde yazıyı kırmızı yapar.
+  final bool destructive;
 
   @override
   State<AppSecondaryButton> createState() => _AppSecondaryButtonState();
@@ -88,6 +93,7 @@ class _AppSecondaryButtonState extends State<AppSecondaryButton> {
       onTapCancel: enabled ? () => setState(() => _pressed = false) : null,
       onTap: widget.onPressed,
       child: Container(
+        alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
           vertical: AppSpacing.md,
@@ -100,7 +106,11 @@ class _AppSecondaryButtonState extends State<AppSecondaryButton> {
         child: Text(
           widget.label,
           style: AppTextStyles.bodyLg.copyWith(
-            color: enabled ? AppColors.textPrimary : AppColors.textDisabled,
+            color: !enabled
+                ? AppColors.textDisabled
+                : widget.destructive
+                ? AppColors.danger
+                : AppColors.textPrimary,
             fontWeight: FontWeight.w600,
           ),
         ),
