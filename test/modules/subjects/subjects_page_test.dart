@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studyflow/data/repositories/subject_repository.dart';
+import 'package:studyflow/data/repositories/task_repository.dart';
 import 'package:studyflow/models/subject.dart';
 import 'package:studyflow/modules/subjects/subjects_controller.dart';
 import 'package:studyflow/modules/subjects/subjects_page.dart';
+
+class _FakeTaskRepository implements TaskRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 class _FakeRepository implements SubjectRepository {
   bool fail = true;
@@ -23,7 +29,7 @@ void main() {
     tester,
   ) async {
     final repository = _FakeRepository();
-    final controller = SubjectsController(repository);
+    final controller = SubjectsController(repository, _FakeTaskRepository());
 
     await tester.pumpWidget(
       MaterialApp(home: SubjectsPage(controller: controller)),

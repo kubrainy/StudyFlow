@@ -15,13 +15,17 @@ Subject _subject({String? description}) => Subject(
 Future<void> _pumpCard(
   WidgetTester tester,
   Subject subject, {
-  VoidCallback? onEdit,
-  VoidCallback? onDelete,
+  VoidCallback? onTap,
+  VoidCallback? onLongPress,
 }) {
   return tester.pumpWidget(
     MaterialApp(
       home: Scaffold(
-        body: SubjectCard(subject: subject, onEdit: onEdit, onDelete: onDelete),
+        body: SubjectCard(
+          subject: subject,
+          onTap: onTap,
+          onLongPress: onLongPress,
+        ),
       ),
     ),
   );
@@ -43,35 +47,43 @@ void main() {
     expect(find.text('Türev ve integral'), findsNothing);
   });
 
-  testWidgets('düzenle ve sil butonları callback çağırır', (tester) async {
-    var edited = false;
-    var deleted = false;
+  testWidgets('solda ders ikonu gösterilir', (tester) async {
+    await _pumpCard(tester, _subject());
+
+    expect(find.byIcon(Icons.menu_book_outlined), findsOneWidget);
+  });
+
+  testWidgets('dokununca onTap çağrılır', (tester) async {
+    var tapped = false;
+
+    await _pumpCard(tester, _subject(), onTap: () => tapped = true);
+    await tester.tap(find.text('Matematik'));
+
+    expect(tapped, isTrue);
+  });
+
+  testWidgets('uzun basınca onLongPress çağrılır, onTap çağrılmaz', (
+    tester,
+  ) async {
+    var tapped = false;
+    var longPressed = false;
 
     await _pumpCard(
       tester,
       _subject(),
-      onEdit: () => edited = true,
-      onDelete: () => deleted = true,
+      onTap: () => tapped = true,
+      onLongPress: () => longPressed = true,
     );
+    await tester.longPress(find.text('Matematik'));
 
-    await tester.tap(find.byTooltip('Düzenle'));
-    await tester.tap(find.byTooltip('Sil'));
-
-    expect(edited, isTrue);
-    expect(deleted, isTrue);
+    expect(longPressed, isTrue);
+    expect(tapped, isFalse);
   });
 
-  testWidgets('callback verilmezse butonlar disabled olur', (tester) async {
+  testWidgets('kartta düzenle ve sil butonu yoktur', (tester) async {
     await _pumpCard(tester, _subject());
 
-    final edit = tester.widget<IconButton>(
-      find.widgetWithIcon(IconButton, Icons.edit_outlined),
-    );
-    final delete = tester.widget<IconButton>(
-      find.widgetWithIcon(IconButton, Icons.delete_outline),
-    );
-
-    expect(edit.onPressed, isNull);
-    expect(delete.onPressed, isNull);
+    expect(find.byTooltip('Düzenle'), findsNothing);
+    expect(find.byTooltip('Sil'), findsNothing);
   });
 }

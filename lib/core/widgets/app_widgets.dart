@@ -6,7 +6,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import 'app_buttons.dart';
 
-enum AppChipType { high, focus, done }
+enum AppChipType { high, focus, done, neutral }
 
 class AppChip extends StatelessWidget {
   const AppChip({
@@ -37,6 +37,11 @@ class AppChip extends StatelessWidget {
         AppColors.doneFill,
         AppColors.doneBorder,
         AppColors.secondary,
+      ),
+      AppChipType.neutral => (
+        AppColors.surfaceSubdued,
+        AppColors.border,
+        AppColors.textSecondary,
       ),
     };
     return Container(

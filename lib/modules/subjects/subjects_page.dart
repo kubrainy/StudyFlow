@@ -13,7 +13,6 @@ import 'subjects_controller.dart';
 class SubjectsPage extends StatefulWidget {
   const SubjectsPage({super.key, this.controller});
 
-  /// Verilmezse modülden alınır; testlerde sahte controller vermek için.
   final SubjectsController? controller;
 
   @override
@@ -77,8 +76,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
     Widget cardAt(int i) => SubjectCard(
       subject: subjects[i],
       onTap: () => context.pushNamed('/subjects/${subjects[i].id}'),
-      onEdit: () => _openForm(subjects[i]),
-      onDelete: () => _confirmDelete(subjects[i]),
+      onLongPress: () => _confirmDelete(subjects[i]),
     );
 
     if (columns == 1) {

@@ -30,7 +30,8 @@ Future<bool> confirmSubjectDelete(BuildContext context, Subject subject) async {
       child: AlertDialog(
         title: const Text('Dersi sil'),
         content: Text(
-          '"${subject.name}" dersi silinecek. Bu işlem geri alınamaz.',
+          '"${subject.name}" dersi ve ona bağlı görevler silinecek. '
+          'Bu işlem geri alınamaz.',
         ),
         actions: [
           TextButton(

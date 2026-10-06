@@ -1,14 +1,16 @@
 import 'package:flutter/foundation.dart';
 
 import '../../data/repositories/subject_repository.dart';
+import '../../data/repositories/task_repository.dart';
 import '../../models/subject.dart';
 
 enum SubjectsStatus { loading, empty, error, success }
 
 class SubjectsController extends ChangeNotifier {
   final SubjectRepository _repository;
+  final TaskRepository _taskRepository;
 
-  SubjectsController(this._repository);
+  SubjectsController(this._repository, this._taskRepository);
 
   List<Subject> _subjects = [];
   SubjectsStatus _status = SubjectsStatus.loading;
@@ -51,7 +53,9 @@ class SubjectsController extends ChangeNotifier {
     load();
   }
 
+  /// Dersi siler; ona bağlı görevler de silinir.
   Future<void> delete(String id) async {
+    await _taskRepository.deleteBySubjectId(id);
     await _repository.delete(id);
     load();
   }
