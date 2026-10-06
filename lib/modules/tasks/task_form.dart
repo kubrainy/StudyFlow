@@ -38,8 +38,6 @@ class TaskForm extends StatefulWidget {
   final String? initialSubjectId;
   final List<Subject> subjects;
   final Future<void> Function(TaskFormData data) onSubmit;
-
-  /// Verilirse (düzenleme modunda) Kaydet'in yanında Sil butonu çıkar.
   final VoidCallback? onDelete;
 
   @override
@@ -109,7 +107,6 @@ class _TaskFormState extends State<TaskForm> {
     return 'Ders yok';
   }
 
-  /// Ders listesini satırın sağ kenarına hizalı açar.
   Future<void> _pickSubject(BuildContext rowContext) async {
     const noSubject = '';
     final box = rowContext.findRenderObject()! as RenderBox;
@@ -118,7 +115,6 @@ class _TaskFormState extends State<TaskForm> {
 
     final picked = await showMenu<String>(
       context: context,
-      // left ekran dışında: menü ekranın sağ kenarına yaslanır.
       position: RelativeRect.fromLTRB(screenWidth, top, 0, 0),
       items: [
         const PopupMenuItem(value: noSubject, child: Text('Ders yok')),
@@ -195,10 +191,18 @@ class _TaskFormState extends State<TaskForm> {
                     controller: _descriptionController,
                     minLines: 1,
                     maxLines: 3,
-                    decoration: const InputDecoration(
+                    style: AppTextStyles.bodyLg,
+                    decoration: InputDecoration(
                       hintText: 'Açıklama ekle',
+                      hintStyle: AppTextStyles.bodyLg.copyWith(
+                        color: AppColors.textDisabled,
+                      ),
+                      // Tema 48dp'lik kutu veriyor; satır zaten 48dp, yazı ortalansın.
+                      constraints: const BoxConstraints(),
                       isDense: true,
-                      contentPadding: EdgeInsets.zero,
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.sm,
+                      ),
                       filled: false,
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
