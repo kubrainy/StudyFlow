@@ -11,16 +11,13 @@ Future<void> showSubjectForm(
   SubjectsController controller, [
   Subject? subject,
 ]) {
-  return showModalBottomSheet<void>(
+  return showBlurredSheet<void>(
     context: context,
-    isScrollControlled: true,
-    builder: (_) => ModalBlur(
-      child: SubjectForm(
-        subject: subject,
-        onSubmit: (name, description) => subject == null
-            ? controller.add(name, description)
-            : controller.update(subject, name, description),
-      ),
+    builder: (_) => SubjectForm(
+      subject: subject,
+      onSubmit: (name, description) => subject == null
+          ? controller.add(name, description)
+          : controller.update(subject, name, description),
     ),
   );
 }

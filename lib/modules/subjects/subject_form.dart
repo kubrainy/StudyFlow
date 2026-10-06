@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_buttons.dart';
 import '../../models/subject.dart';
 
@@ -62,7 +64,9 @@ class _SubjectFormState extends State<SubjectForm> {
         children: [
           Text(
             isEdit ? 'Dersi düzenle' : 'Ders ekle',
-            style: Theme.of(context).textTheme.titleLarge,
+            style: AppTextStyles.headlineMd.copyWith(
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: AppSpacing.md),
           TextField(
