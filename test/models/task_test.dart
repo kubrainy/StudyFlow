@@ -59,5 +59,25 @@ void main() {
       expect(reopened.completedAt, isNull);
       expect(reopened.title, task.title);
     });
+
+    test('clear bayrakları açıklama, son tarih ve dersi siler', () {
+      final cleared = task.copyWith(
+        clearDescription: true,
+        clearDueDate: true,
+        clearSubjectId: true,
+      );
+
+      expect(cleared.description, isNull);
+      expect(cleared.dueDate, isNull);
+      expect(cleared.subjectId, isNull);
+      expect(cleared.title, task.title);
+    });
+
+    test('bayrak verilmezse null değer eski alanı korur', () {
+      final same = task.copyWith(description: null, dueDate: null);
+
+      expect(same.description, task.description);
+      expect(same.dueDate, task.dueDate);
+    });
   });
 }

@@ -44,6 +44,9 @@ class TaskRepository {
     String? subjectId,
     TaskPriority? priority,
     DateTime? dueDate,
+    bool clearSubjectId = false,
+    bool clearDescription = false,
+    bool clearDueDate = false,
   }) async {
     final updated = task.copyWith(
       title: title,
@@ -52,6 +55,9 @@ class TaskRepository {
       priority: priority,
       dueDate: dueDate,
       updatedAt: DateTime.now(),
+      clearSubjectId: clearSubjectId,
+      clearDescription: clearDescription,
+      clearDueDate: clearDueDate,
     );
     await _local.save(updated);
     return updated;
@@ -67,5 +73,11 @@ class TaskRepository {
     );
     await _local.save(updated);
     return updated;
+  }
+
+  Future<void> deleteBySubjectId(String subjectId) async {
+    for (final task in _local.getBySubjectId(subjectId)) {
+      await _local.delete(task.id);
+    }
   }
 }

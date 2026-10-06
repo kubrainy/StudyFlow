@@ -51,6 +51,24 @@ void main() {
 
       verify(() => local.delete('task-1')).called(1);
     });
+
+    test('deleteBySubjectId sadece o dersin görevlerini siler', () async {
+      final second = Task(
+        id: 'task-2',
+        subjectId: 'subject-1',
+        title: 'İkinci görev',
+        createdAt: task.createdAt,
+        updatedAt: task.updatedAt,
+      );
+      when(() => local.getBySubjectId('subject-1')).thenReturn([task, second]);
+      when(() => local.delete(any())).thenAnswer((_) async {});
+
+      await repository.deleteBySubjectId('subject-1');
+
+      verify(() => local.delete('task-1')).called(1);
+      verify(() => local.delete('task-2')).called(1);
+      verifyNever(() => local.getAll());
+    });
   });
 
   group('TaskRepository.add', () {
@@ -119,6 +137,21 @@ void main() {
       expect(result.title, 'Yeni başlık');
       expect(result.isCompleted, isTrue);
       expect(result.completedAt, DateTime(2026, 10, 2));
+    });
+
+    test('clear bayrakları açıklama, son tarih ve dersi boşaltır', () async {
+      final result = await repository.update(
+        task,
+        clearDescription: true,
+        clearDueDate: true,
+        clearSubjectId: true,
+      );
+
+      expect(result.description, isNull);
+      expect(result.dueDate, isNull);
+      expect(result.subjectId, isNull);
+      expect(result.title, task.title);
+      verify(() => local.save(result)).called(1);
     });
   });
 
