@@ -16,7 +16,7 @@ class _AppShellState extends State<AppShell> {
   final _outletKey = GlobalKey<RouterOutletState>();
 
   static const _tabs = [
-    _Tab('/dashboard', Icons.dashboard_outlined, 'Dashboard'),
+    _Tab('/dashboard', Icons.dashboard_outlined, 'Ana sayfa'),
     _Tab('/subjects', Icons.menu_book_outlined, 'Dersler'),
     _Tab('/tasks', Icons.check_circle_outline, 'Görevler'),
     _Tab('/pomodoro', Icons.timer_outlined, 'Pomodoro'),

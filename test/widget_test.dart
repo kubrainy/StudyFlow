@@ -19,6 +19,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(AppWidget), findsOneWidget);
-    expect(find.text('Dashboard Page'), findsOneWidget);
+    expect(find.text('Ana sayfa içeriği yakında'), findsOneWidget);
   });
 }

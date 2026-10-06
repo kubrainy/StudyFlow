@@ -8,7 +8,7 @@ class DashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: const Text('Ana sayfa'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
@@ -16,7 +16,7 @@ class DashboardPage extends StatelessWidget {
           ),
         ],
       ),
-      body: const Center(child: Text('Dashboard Page')),
+      body: const Center(child: Text('Ana sayfa içeriği yakında')),
     );
   }
 }

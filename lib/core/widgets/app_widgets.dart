@@ -124,7 +124,7 @@ class AppSegmentedControl extends StatelessWidget {
                     color: i == selectedIndex
                         ? AppColors.surface
                         : Colors.transparent,
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(AppRadius.segment),
                     boxShadow: i == selectedIndex ? AppShadows.level1 : null,
                   ),
                   child: Text(

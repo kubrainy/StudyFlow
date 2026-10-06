@@ -33,6 +33,7 @@ abstract final class AppSpacing {
 abstract final class AppRadius {
   static const double checkbox = 6;
   static const double control = 8; // input, segmented, list row
+  static const double segment = 6; // segmented control'de seçili parça
   static const double card = 16; // kart, modal
   static const double pill = 999; // buton, chip, FAB
 
