@@ -93,6 +93,15 @@ class TasksViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Başka bir ekrandan (örn. İstatistikler) gelinince: arama ve ders süzgecini
+  /// temizleyip listeyi yalnızca [filter] ile açar.
+  void showOnly(TaskFilter filter) {
+    _query = '';
+    _subjectId = null;
+    _filter = filter;
+    notifyListeners();
+  }
+
   Future<void> add(
     String title, {
     String? description,

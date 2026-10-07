@@ -42,6 +42,21 @@ abstract final class AppColors {
   static const timerTrack = Color(0xFFEEF2FF);
   static const timerGradient = [primary, secondaryCyan];
 
+  // Grafiklerde ders rengi (tahmin, DESIGN.md renk vermiyor): 10 ayrı renk, 10'dan
+  // fazla derste başa dönülür. Kırmızı bilerek yok: hata/öncelik anlamı taşıyor.
+  static const subjectPalette = [
+    primary, // indigo
+    secondaryCyan,
+    secondary, // yeşil
+    Color(0xFFEC4899), // pembe
+    Color(0xFFF59E0B), // amber
+    Color(0xFF8B5CF6), // mor
+    Color(0xFF3B82F6), // mavi
+    Color(0xFFF97316), // turuncu
+    Color(0xFF14B8A6), // turkuaz
+    Color(0xFF84CC16), // limon yeşili
+  ];
+
   // Modal scrim: #0F172A %40
   static const scrim = Color(0x660F172A);
 }

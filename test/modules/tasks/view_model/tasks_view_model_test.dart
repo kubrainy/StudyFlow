@@ -110,6 +110,28 @@ void main() {
     });
   });
 
+  group('showOnly', () {
+    test('arama ve ders süzgecini temizleyip yalnızca filtreyi uygular', () {
+      viewModel.setQuery('türev');
+      viewModel.setSubjectId('mat');
+
+      viewModel.showOnly(TaskFilter.completed);
+
+      expect(viewModel.filter, TaskFilter.completed);
+      expect(viewModel.query, isEmpty);
+      expect(viewModel.subjectId, isNull);
+    });
+
+    test('dinleyicilere haber verir', () {
+      var notified = 0;
+      viewModel.addListener(() => notified++);
+
+      viewModel.showOnly(TaskFilter.completed);
+
+      expect(notified, 1);
+    });
+  });
+
   group('sıralama', () {
     test('bekleyenler üstte, yakın tarih önce, tarihsiz sonda', () {
       when(() => repository.getAll()).thenReturn([

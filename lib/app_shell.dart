@@ -52,6 +52,8 @@ class _AppShellState extends State<AppShell> {
                           Icon(tab.icon, color: _colorFor(tab, path)),
                           Text(
                             tab.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: AppTextStyles.bodySm.copyWith(
                               color: _colorFor(tab, path),
                             ),
