@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:studyflow/modules/statistics/models/statistics_summary.dart';
 import 'package:studyflow/modules/statistics/view/widgets/today_summary_card.dart';
 
 Future<void> _pumpCard(
@@ -18,10 +19,12 @@ Future<void> _pumpCard(
           child: SizedBox(
             width: width,
             child: TodaySummaryCard(
-              todayMinutes: today,
+              summary: StatisticsSummary(
+                todayMinutes: today,
+                weekMinutes: week,
+                weekCompletedTasks: tasks,
+              ),
               goalMinutes: goal,
-              weekMinutes: week,
-              completedTasks: tasks,
               onTasksTap: onTasksTap,
             ),
           ),

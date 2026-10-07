@@ -120,13 +120,9 @@ class _StatisticsPageState extends State<StatisticsPage> {
   }
 
   Widget _summaryCard() {
-    final summary = _viewModel.summary;
-
     return TodaySummaryCard(
-      todayMinutes: summary.todayMinutes,
+      summary: _viewModel.summary,
       goalMinutes: _viewModel.dailyGoalMinutes,
-      weekMinutes: summary.weekMinutes,
-      completedTasks: summary.weekCompletedTasks,
       onTasksTap: _openCompletedTasks,
     );
   }

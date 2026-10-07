@@ -10,10 +10,14 @@ class AppPrimaryButton extends StatefulWidget {
     super.key,
     required this.label,
     required this.onPressed,
+    this.compact = false,
   });
 
   final String label;
   final VoidCallback? onPressed;
+
+  /// Kartların içindeki ikincil yerlerde kullanılan daha alçak düğme (44dp).
+  final bool compact;
 
   @override
   State<AppPrimaryButton> createState() => _AppPrimaryButtonState();
@@ -38,7 +42,7 @@ class _AppPrimaryButtonState extends State<AppPrimaryButton> {
           alignment: Alignment.center,
           padding: EdgeInsets.symmetric(
             horizontal: AppSpacing.lg,
-            vertical: AppSpacing.md,
+            vertical: widget.compact ? AppSpacing.sm : AppSpacing.md,
           ),
           decoration: BoxDecoration(
             color: !enabled
@@ -51,10 +55,14 @@ class _AppPrimaryButtonState extends State<AppPrimaryButton> {
           ),
           child: Text(
             widget.label,
-            style: AppTextStyles.bodyLg.copyWith(
-              color: AppColors.onPrimary,
-              fontWeight: FontWeight.w600,
-            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style:
+                (widget.compact ? AppTextStyles.bodyMd : AppTextStyles.bodyLg)
+                    .copyWith(
+                      color: AppColors.onPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
           ),
         ),
       ),

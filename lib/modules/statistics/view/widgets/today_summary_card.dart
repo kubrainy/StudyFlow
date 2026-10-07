@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -7,34 +5,39 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/format_minutes.dart';
 import '../../../../core/widgets/app_widgets.dart';
+import '../../../../core/widgets/goal_ring.dart';
+import '../../models/statistics_summary.dart';
 
 /// Sayfanın üstündeki kart: bugünün hedef halkası, haftalık toplam ve biten görevler.
 class TodaySummaryCard extends StatelessWidget {
   const TodaySummaryCard({
     super.key,
-    required this.todayMinutes,
+    required this.summary,
     required this.goalMinutes,
-    required this.weekMinutes,
-    required this.completedTasks,
     this.onTasksTap,
   });
 
-  final int todayMinutes;
+  final StatisticsSummary summary;
+
+  /// Ayarlar'daki günlük hedef; istatistik sonucu olmadığı için modelde değil.
   final int goalMinutes;
-  final int weekMinutes;
-  final int completedTasks;
 
   /// "N görev bitti" rozetine basılınca çağrılır; null ise rozet tıklanmaz.
   final VoidCallback? onTasksTap;
 
   @override
   Widget build(BuildContext context) {
-    final progress = (todayMinutes / goalMinutes).clamp(0.0, 1.0);
+    final progress = (summary.todayMinutes / goalMinutes).clamp(0.0, 1.0);
 
     return AppCard(
       child: Row(
         children: [
-          _TodayRing(minutes: todayMinutes, progress: progress),
+          GoalRing(
+            key: const Key('today-ring'),
+            progress: progress,
+            value: '${summary.todayMinutes}',
+            caption: 'dk bugün',
+          ),
           const SizedBox(width: AppSpacing.lg),
           Expanded(
             child: Column(
@@ -47,7 +50,7 @@ class TodaySummaryCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  formatMinutes(weekMinutes),
+                  formatMinutes(summary.weekMinutes),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.headlineMd.copyWith(
@@ -56,7 +59,7 @@ class TodaySummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 _DoneBadge(
-                  label: '$completedTasks görev bitti',
+                  label: '${summary.weekCompletedTasks} görev bitti',
                   onTap: onTasksTap,
                 ),
                 Text(
@@ -136,80 +139,4 @@ class _DoneBadge extends StatelessWidget {
       ),
     );
   }
-}
-
-class _TodayRing extends StatelessWidget {
-  const _TodayRing({required this.minutes, required this.progress});
-
-  static const _size = 112.0;
-
-  final int minutes;
-  final double progress;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      key: const Key('today-ring'),
-      width: _size,
-      height: _size,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          CustomPaint(
-            size: const Size.square(_size),
-            painter: _RingPainter(progress: progress),
-          ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '$minutes',
-                style: AppTextStyles.headlineLg.copyWith(
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              Text(
-                'dk bugün',
-                style: AppTextStyles.bodySm.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RingPainter extends CustomPainter {
-  _RingPainter({required this.progress});
-
-  final double progress;
-
-  static const _stroke = 10.0;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = (Offset.zero & size).deflate(_stroke / 2);
-    final track = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = _stroke
-      ..color = AppColors.timerTrack;
-    canvas.drawCircle(rect.center, rect.width / 2, track);
-    if (progress <= 0) return;
-
-    final arc = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = _stroke
-      ..strokeCap = StrokeCap.round
-      ..shader = const SweepGradient(
-        colors: AppColors.timerGradient,
-        transform: GradientRotation(-math.pi / 2),
-      ).createShader(rect);
-    canvas.drawArc(rect, -math.pi / 2, 2 * math.pi * progress, false, arc);
-  }
-
-  @override
-  bool shouldRepaint(_RingPainter old) => old.progress != progress;
 }
