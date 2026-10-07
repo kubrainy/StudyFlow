@@ -56,6 +56,24 @@ void main() {
       verify(() => local.save(result)).called(1);
     });
 
+    test('update name verilirse ismi değiştirir ve kaydeder', () async {
+      when(() => local.get()).thenReturn(settings);
+
+      final result = await repository.update(name: 'Kübra');
+
+      expect(result.name, 'Kübra');
+      expect(result.dailyGoalMinutes, 180);
+      verify(() => local.save(result)).called(1);
+    });
+
+    test('update name vermezse mevcut ismi korur', () async {
+      when(() => local.get()).thenReturn(settings.copyWith(name: 'Ayşe'));
+
+      final result = await repository.update(breakMinutes: 15);
+
+      expect(result.name, 'Ayşe');
+    });
+
     test('kayıt yokken varsayılan ayarlar üzerine uygular', () async {
       when(() => local.get()).thenReturn(const UserSettings());
 

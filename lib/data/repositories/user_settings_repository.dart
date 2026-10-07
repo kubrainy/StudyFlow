@@ -9,12 +9,14 @@ class UserSettingsRepository {
   UserSettings get() => _local.get();
 
   Future<UserSettings> update({
+    String? name,
     int? dailyGoalMinutes,
     int? pomodoroMinutes,
     int? breakMinutes,
     bool? notificationsEnabled,
   }) async {
     final updated = _local.get().copyWith(
+      name: name,
       dailyGoalMinutes: dailyGoalMinutes,
       pomodoroMinutes: pomodoroMinutes,
       breakMinutes: breakMinutes,
@@ -23,4 +25,5 @@ class UserSettingsRepository {
     await _local.save(updated);
     return updated;
   }
+
 }
