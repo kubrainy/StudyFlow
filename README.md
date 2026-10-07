@@ -18,8 +18,8 @@ Durum tablosu, proje ilerledikçe güncellenir.
 | **Görevler** | Ekleme, düzenleme, silme, tamamlama, öncelik, son tarih, erteleme, arama ve filtreleme (durum, ders) | Tamam |
 | **Pomodoro** | Başlat / duraklat / devam / sıfırla, çalışma ve mola aşamaları, süre ayarı, derse bağlı ya da serbest çalışma, oturum kaydı | Tamam |
 | **İstatistikler** | Günlük hedef halkası, haftalık çalışma grafiği (Pazartesi–Pazar), derslere göre dağılım, bu hafta biten görevler | Tamam |
-| **Ayarlar** | Günlük hedef, Pomodoro ve mola süresi, bildirim ayarı | Yapılacak |
-| **Ana sayfa (Dashboard)** | Günlük çalışma, hedef, biten görevler, son aktiviteler | Yapılacak |
+| **Ayarlar** | Profil kartı (isim, toplam çalışma, biten görev, ders sayısı), günlük hedef, Pomodoro ve mola süresi, bildirim anahtarı | Tamam |
+| **Ana sayfa (Dashboard)** | Günlük hedef halkası, bugün biten görevler, son çalışmalar zaman çizgisi, "Merhaba, isim" | Tamam |
 | **Bildirimler** | Pomodoro bitişi | Yapılacak |
 
 ## Kullanılan teknolojiler
@@ -108,8 +108,7 @@ Eklenecek.
 
 ## Bilinen problemler ve eksikler
 
-- Ayarlar ve Ana sayfa ekranları henüz yapılmadı (iskelet sayfa). Bu yüzden günlük hedef şimdilik varsayılan değerinde (120 dk) kalıyor, uygulamadan değiştirilemiyor.
-- Bildirimler henüz çalışmıyor (paket kurulu, Pomodoro bitişinde bildirim yapılacak).
+- Bildirimler henüz çalışmıyor: Ayarlar'daki "Pomodoro bitince bildir" anahtarı sadece ayarı kaydeder, gerçek bildirim (paket kurulu) Pomodoro bitişine henüz bağlı değil.
 - Dio ile yazılmış REST katmanı hazır ama Repository'lere henüz bağlı değil; uygulama şu an doğrudan Hive ile çalışıyor. REST katmanı internete çıkmaz, uygulamanın içindeki yerel bir adaptöre bağlanır.
 - Integration testleri ve release build (APK/AAB) henüz yapılmadı.
 - İstatistiklerdeki "bu hafta biten görev" sayısı, tamamlanma tarihi kaydedilmemiş eski görevleri saymaz.
