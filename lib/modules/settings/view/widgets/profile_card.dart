@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/format_minutes.dart';
+import '../../../../core/utils/upper_tr.dart';
 import '../../../../core/widgets/app_widgets.dart';
 
 /// Ayarlar'ın en üstündeki profil kartı: baş harf avatarı, isim, düzenle
@@ -94,9 +95,7 @@ class _Avatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final trimmed = name.trim();
-    final first = trimmed.isEmpty ? '' : trimmed.characters.first;
-    // Dart "i"yi "I" yapar; Türkçede noktalı İ olmalı (ör. "irem" → İ).
-    final initial = first == 'i' ? 'İ' : first.toUpperCase();
+    final initial = trimmed.isEmpty ? '' : upperTr(trimmed.characters.first);
 
     return CircleAvatar(
       key: const Key('profile-avatar'),

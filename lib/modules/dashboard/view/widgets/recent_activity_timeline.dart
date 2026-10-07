@@ -6,6 +6,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/day_label.dart';
 import '../../../../core/utils/format_minutes.dart';
+import '../../../../core/utils/upper_tr.dart';
 import '../../../../core/widgets/app_widgets.dart';
 import '../../models/activity_day.dart';
 import '../../models/recent_activity.dart';
@@ -57,7 +58,7 @@ class _DayGroup extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          dayLabel(day.date, now).toUpperCase(),
+          upperTr(dayLabel(day.date, now)),
           style: AppTextStyles.labelCaps.copyWith(
             color: AppColors.textSecondary,
           ),

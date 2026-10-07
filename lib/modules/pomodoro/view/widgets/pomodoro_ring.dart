@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/upper_tr.dart';
 import 'pomodoro_sizes.dart';
 
 class PomodoroRing extends StatelessWidget {
@@ -52,7 +53,7 @@ class PomodoroRing extends StatelessWidget {
                         .copyWith(color: AppColors.textPrimary),
               ),
               Text(
-                label.toUpperCase(),
+                upperTr(label),
                 style: AppTextStyles.bodySm.copyWith(
                   color: accent,
                   fontWeight: FontWeight.w600,

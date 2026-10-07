@@ -73,6 +73,25 @@ void main() {
     expect(find.text('1 sa 5 dk'), findsOneWidget);
   });
 
+  testWidgets('eski günün başlığı Türkçe büyük harfle yazılır (EKİ)', (
+    tester,
+  ) async {
+    await _pump(tester, [
+      ActivityDay(
+        date: DateTime(2026, 10, 5),
+        activities: [
+          RecentActivity(
+            name: 'Serbest çalışma',
+            startedAt: DateTime(2026, 10, 5, 9),
+            minutes: 10,
+          ),
+        ],
+      ),
+    ]);
+
+    expect(find.text('5 EKİ'), findsOneWidget);
+  });
+
   testWidgets('her satır için bir nokta çizer', (tester) async {
     await _pump(tester, _days);
 
