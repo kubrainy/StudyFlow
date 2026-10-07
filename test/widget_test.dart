@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:studyflow/app_module.dart';
 import 'package:studyflow/app_widget.dart';
+import 'package:studyflow/modules/dashboard/view/dashboard_page.dart';
 
 void main() {
   GoogleFonts.config.allowRuntimeFetching = false;
@@ -19,6 +20,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(AppWidget), findsOneWidget);
-    expect(find.text('Ana sayfa içeriği yakında'), findsOneWidget);
+    expect(find.byType(DashboardPage), findsOneWidget);
+    expect(find.text('Ana sayfa'), findsWidgets);
   });
 }
