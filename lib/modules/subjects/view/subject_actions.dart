@@ -22,7 +22,6 @@ Future<void> showSubjectForm(
   );
 }
 
-/// Silme onay diyaloğu; "Sil" denirse true döner.
 Future<bool> confirmSubjectDelete(BuildContext context, Subject subject) async {
   final confirmed = await showDialog<bool>(
     context: context,
