@@ -37,8 +37,12 @@ class DashboardViewModel extends ChangeNotifier {
     goalMinutes: const UserSettings().dailyGoalMinutes,
   );
   List<ActivityDay> _days = [];
+  String _name = '';
 
   DashboardStatus get status => _status;
+
+  /// Ayarlar'da girilen isim; girilmediyse boş.
+  String get name => _name;
   String? get errorMessage => _errorMessage;
   DashboardSummary get summary => _summary;
 
@@ -54,7 +58,9 @@ class DashboardViewModel extends ChangeNotifier {
       final subjects = _subjectRepository.getAll();
       final now = _now();
       // Hedef 0 ya da eksi girilirse halkada sıfıra bölmemek için en az 1.
-      final goal = math.max(1, _settingsRepository.get().dailyGoalMinutes);
+      final userSettings = _settingsRepository.get();
+      final goal = math.max(1, userSettings.dailyGoalMinutes);
+      _name = userSettings.name.trim();
 
       _summary = _calculator.summary(sessions, tasks, now, goalMinutes: goal);
       _days = _calculator.recentByDay(sessions, subjects);

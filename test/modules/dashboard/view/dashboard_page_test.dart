@@ -82,6 +82,32 @@ void main() {
     expect(goal.bottom, lessThan(recent.top));
   });
 
+  testWidgets('isim girilmişse başlıkta "Merhaba, isim" yazar', (tester) async {
+    when(() => settings.get()).thenReturn(const UserSettings(name: 'Kübra'));
+
+    await pumpPage(tester, const Size(360, 900));
+
+    expect(find.text('Merhaba, Kübra'), findsOneWidget);
+    expect(find.text('Ana sayfa'), findsNothing);
+  });
+
+  testWidgets('isim yoksa başlık "Ana sayfa" kalır', (tester) async {
+    await pumpPage(tester, const Size(360, 900));
+
+    expect(find.text('Ana sayfa'), findsOneWidget);
+    expect(find.textContaining('Merhaba'), findsNothing);
+  });
+
+  testWidgets('çok uzun isim başlıkta taşmaz', (tester) async {
+    when(() => settings.get()).thenReturn(
+      const UserSettings(name: 'Çok çok uzun bir isim soyisim ve daha fazlası'),
+    );
+
+    await pumpPage(tester, const Size(320, 640));
+
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('tablette hedef kartı solda, zaman çizgisi sağda durur', (
     tester,
   ) async {

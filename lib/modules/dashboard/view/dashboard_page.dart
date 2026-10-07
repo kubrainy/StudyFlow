@@ -30,6 +30,12 @@ class _DashboardPageState extends State<DashboardPage> {
     _viewModel.load();
   }
 
+  /// Ayarlar'ı açar; geri dönünce isim ve hedef değişmiş olabilir, yeniden yükler.
+  Future<void> _openSettings() async {
+    await context.pushNamed('/settings');
+    if (mounted) _viewModel.load();
+  }
+
   /// Pomodoro sekmesini açar; sayacı kendisi başlatmaz (ders seçilebilsin).
   void _openPomodoro() => context.navigate('/pomodoro');
 
@@ -43,12 +49,22 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ana sayfa'),
+        title: ListenableBuilder(
+          listenable: _viewModel,
+          builder: (context, _) {
+            final name = _viewModel.name;
+            return Text(
+              name.isEmpty ? 'Ana sayfa' : 'Merhaba, $name',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            );
+          },
+        ),
         actions: [
           IconButton(
             tooltip: 'Ayarlar',
             icon: const Icon(Icons.settings_outlined),
-            onPressed: () => context.pushNamed('/settings'),
+            onPressed: _openSettings,
           ),
         ],
       ),

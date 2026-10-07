@@ -112,6 +112,21 @@ void main() {
       expect(viewModel.summary.goalMinutes, 90);
     });
 
+    test('isim Ayarlar\'dan gelir, boşluklar kırpılır', () {
+      when(() => settings.get())
+          .thenReturn(const UserSettings(name: '  Kübra '));
+
+      viewModel.load();
+
+      expect(viewModel.name, 'Kübra');
+    });
+
+    test('isim girilmediyse boştur', () {
+      viewModel.load();
+
+      expect(viewModel.name, '');
+    });
+
     test('hedef 0 girilirse en az 1 olur, sıfıra bölünmez', () {
       when(() => settings.get())
           .thenReturn(const UserSettings(dailyGoalMinutes: 0));
