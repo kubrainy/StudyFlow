@@ -20,7 +20,7 @@ Durum tablosu, proje ilerledikçe güncellenir.
 | **İstatistikler** | Günlük hedef halkası, haftalık çalışma grafiği (Pazartesi–Pazar), derslere göre dağılım, bu hafta biten görevler | Tamam |
 | **Ayarlar** | Profil kartı (isim, toplam çalışma, biten görev, ders sayısı), günlük hedef, Pomodoro ve mola süresi, bildirim anahtarı | Tamam |
 | **Ana sayfa (Dashboard)** | Günlük hedef halkası, bugün biten görevler, son çalışmalar zaman çizgisi, "Merhaba, isim" | Tamam |
-| **Bildirimler** | Pomodoro bitişi | Yapılacak |
+| **Bildirimler** | Çalışma süresi bitince yerel bildirim: Pomodoro başlarken önceden planlanır, uygulama arkadayken ve ekran kilitliyken de gelir. İzin ilk Pomodoro'da istenir, Ayarlar'daki anahtarla kapatılır | Tamam |
 
 ## Kullanılan teknolojiler
 
@@ -100,7 +100,9 @@ flutter test        # birim ve widget testleri
 
 Testler `test/` altında, `lib/` ile aynı klasör düzenindedir (`test/modules/<modül>/view_model`, `view`, `view/widgets`). Repository'ler `mocktail` ile taklit edilir; böylece ViewModel testleri gerçek veritabanına ihtiyaç duymaz.
 
-Şu an kapsananlar: Repository'ler, Dio katmanı ve yerel adaptör, ViewModel'ler, istatistik hesapları, ortak bileşenler ve modüllerin widget'ları. Integration testleri henüz yazılmadı.
+Şu an kapsananlar: Repository'ler (hem taklit kaynaklarla hem gerçek Dio zinciriyle), Dio katmanı ve yerel adaptör, ViewModel'ler, bildirim servisi, istatistik hesapları, ortak bileşenler ve modüllerin widget'ları. Integration testleri henüz yazılmadı.
+
+**İnternetsiz cihaz doğrulaması** (Android 15 telefon, hiçbir ağ bağlı değil): ders ekleme ve silme (bağlı görevlerle birlikte), görev ekleme ve tamamlama, derse bağlı Pomodoro oturumu kaydı, Pomodoro başlarken bitiş alarmının kurulması, duraklatınca iptal edilmesi, devam edince yeniden kurulması, bitirince iptal edilmesi ve İstatistikler ekranındaki rakamlar sorunsuz çalıştı.
 
 ## Ekran görüntüleri
 
@@ -108,8 +110,9 @@ Eklenecek.
 
 ## Bilinen problemler ve eksikler
 
-- Bildirimler henüz çalışmıyor: Ayarlar'daki "Pomodoro bitince bildir" anahtarı sadece ayarı kaydeder, gerçek bildirim (paket kurulu) Pomodoro bitişine henüz bağlı değil.
-- Dio ile yazılmış REST katmanı hazır ama Repository'lere henüz bağlı değil; uygulama şu an doğrudan Hive ile çalışıyor. REST katmanı internete çıkmaz, uygulamanın içindeki yerel bir adaptöre bağlanır.
+- Bildirim yalnızca Android'de ve yalnızca çalışma aşamasının bitişinde gelir; mola bitişinde bildirim yok. Telefon yeniden başlarsa Pomodoro sayacı ve planlanmış bildirim sıfırlanır.
+- REST katmanı gerçek bir sunucuyla konuşmaz: Dio isteklerini uygulamanın içindeki sahte sunucu (`LocalApiAdapter`) karşılar ve Hive'a yazar, internete hiç çıkılmaz. Ders ve görev yazma işleri (ekle, düzenle, sil, tamamla) bu yoldan gider; listeler Hive'dan okunur, yani GET uygulama akışında kullanılmaz. Çalışma oturumları ve ayarlar REST dışındadır.
+- Bir kayıt arada silinmişken düzenlenmeye ya da silinmeye çalışılırsa sahte sunucu 404 döner, sayfanın üstünde "İşlem başarısız: Kayıt bulunamadı." yazar. Ders silinirken görev silme yarıda hata verirse o ana kadar silinen görevler geri gelmez.
 - Integration testleri ve release build (APK/AAB) henüz yapılmadı.
 - İstatistiklerdeki "bu hafta biten görev" sayısı, tamamlanma tarihi kaydedilmemiş eski görevleri saymaz.
 - İstatistiklerdeki "Derslere göre" bölümü haftalık değil, tüm zamanları toplar.
