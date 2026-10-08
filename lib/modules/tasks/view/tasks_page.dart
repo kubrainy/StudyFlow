@@ -54,9 +54,21 @@ class _TasksPageState extends State<TasksPage> {
     if (!await confirmTaskDelete(context, task)) return;
 
     await _viewModel.delete(task.id);
-    if (!mounted) return;
+    if (!mounted || _viewModel.actionError != null) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('Görev silindi')));
+  }
+
+  /// Yazma işlemi başarısız olduysa içeriğin üstüne kırmızı hata satırı koyar.
+  Widget _withActionError(Widget content) {
+    final error = _viewModel.actionError;
+    if (error == null) return content;
+    return Column(
+      children: [
+        AppInlineError(message: error),
+        Expanded(child: content),
+      ],
+    );
   }
 
   @override
@@ -99,17 +111,18 @@ class _TasksPageState extends State<TasksPage> {
             message: _viewModel.errorMessage ?? 'Bir hata oluştu',
             onRetry: _viewModel.load,
           ),
-          TasksStatus.empty => const AppEmptyView(
-            icon: Icons.check_circle_outline,
-            title: 'Henüz görev yok',
-            message: 'İlk görevini eklemek için + butonuna dokun.',
+          TasksStatus.empty => _withActionError(
+            const AppEmptyView(
+              icon: Icons.check_circle_outline,
+              title: 'Henüz görev yok',
+              message: 'İlk görevini eklemek için + butonuna dokun.',
+            ),
           ),
           TasksStatus.success => Column(
             children: [
-              _FilterBar(
-                viewModel: _viewModel,
-                subjects: _viewModel.subjects,
-              ),
+              if (_viewModel.actionError case final error?)
+                AppInlineError(message: error),
+              _FilterBar(viewModel: _viewModel, subjects: _viewModel.subjects),
               Expanded(child: _buildList(context)),
             ],
           ),

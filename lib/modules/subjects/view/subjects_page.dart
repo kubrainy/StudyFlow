@@ -36,9 +36,21 @@ class _SubjectsPageState extends State<SubjectsPage> {
     if (!await confirmSubjectDelete(context, subject)) return;
 
     await _viewModel.delete(subject.id);
-    if (!mounted) return;
+    if (!mounted || _viewModel.actionError != null) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('Ders silindi')));
+  }
+
+  /// Yazma işlemi başarısız olduysa içeriğin üstüne kırmızı hata satırı koyar.
+  Widget _withActionError(Widget content) {
+    final error = _viewModel.actionError;
+    if (error == null) return content;
+    return Column(
+      children: [
+        AppInlineError(message: error),
+        Expanded(child: content),
+      ],
+    );
   }
 
   @override
@@ -57,12 +69,14 @@ class _SubjectsPageState extends State<SubjectsPage> {
             message: _viewModel.errorMessage ?? 'Bir hata oluştu',
             onRetry: _viewModel.load,
           ),
-          SubjectsStatus.empty => const AppEmptyView(
-            icon: Icons.menu_book_outlined,
-            title: 'Henüz ders yok',
-            message: 'İlk dersini eklemek için + butonuna dokun.',
+          SubjectsStatus.empty => _withActionError(
+            const AppEmptyView(
+              icon: Icons.menu_book_outlined,
+              title: 'Henüz ders yok',
+              message: 'İlk dersini eklemek için + butonuna dokun.',
+            ),
           ),
-          SubjectsStatus.success => _buildList(context),
+          SubjectsStatus.success => _withActionError(_buildList(context)),
         },
       ),
     );

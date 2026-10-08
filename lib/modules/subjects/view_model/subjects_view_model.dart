@@ -15,10 +15,14 @@ class SubjectsViewModel extends ChangeNotifier {
   List<Subject> _subjects = [];
   SubjectsStatus _status = SubjectsStatus.loading;
   String? _errorMessage;
+  String? _actionError;
 
   List<Subject> get subjects => _subjects;
   SubjectsStatus get status => _status;
   String? get errorMessage => _errorMessage;
+
+  /// Son yazma işlemi (ekle, düzenle, sil) başarısız olduysa mesajı; yoksa null.
+  String? get actionError => _actionError;
 
   Subject? findById(String id) {
     for (final s in _repository.getAll()) {
@@ -37,6 +41,11 @@ class SubjectsViewModel extends ChangeNotifier {
   }
 
   void load() {
+    _actionError = null;
+    _refresh();
+  }
+
+  void _refresh() {
     _status = SubjectsStatus.loading;
     notifyListeners();
     try {
@@ -52,20 +61,28 @@ class SubjectsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> add(String name, String? description) async {
-    await _repository.add(name, description);
-    load();
+  /// Yazma işlemini çalıştırır. REST hata verirse (ör. kayıt bulunamadı)
+  /// mesajı [actionError]'a yazılır; her durumda liste yenilenir.
+  Future<void> _write(Future<void> Function() action) async {
+    try {
+      await action();
+      _actionError = null;
+    } catch (e) {
+      _actionError = e.toString();
+    }
+    _refresh();
   }
 
-  Future<void> update(Subject subject, String name, String? description) async {
-    await _repository.update(subject, name, description);
-    load();
-  }
+  Future<void> add(String name, String? description) =>
+      _write(() => _repository.add(name, description));
 
-  /// Dersi siler; ona bağlı görevler de silinir.
-  Future<void> delete(String id) async {
+  Future<void> update(Subject subject, String name, String? description) =>
+      _write(() => _repository.update(subject, name, description));
+
+  /// Dersi siler; ona bağlı görevler de silinir. Görev silme hata verirse
+  /// ders silinmez.
+  Future<void> delete(String id) => _write(() async {
     await _taskRepository.deleteBySubjectId(id);
     await _repository.delete(id);
-    load();
-  }
+  });
 }

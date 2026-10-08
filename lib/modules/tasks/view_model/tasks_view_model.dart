@@ -18,12 +18,17 @@ class TasksViewModel extends ChangeNotifier {
   List<Task> _tasks = [];
   TasksStatus _status = TasksStatus.loading;
   String? _errorMessage;
+  String? _actionError;
   String _query = '';
   TaskFilter _filter = TaskFilter.all;
   String? _subjectId;
 
   TasksStatus get status => _status;
   String? get errorMessage => _errorMessage;
+
+  /// Son yazma işlemi (ekle, düzenle, sil, tamamla) başarısız olduysa mesajı;
+  /// yoksa null.
+  String? get actionError => _actionError;
   String get query => _query;
   TaskFilter get filter => _filter;
   String? get subjectId => _subjectId;
@@ -37,8 +42,7 @@ class TasksViewModel extends ChangeNotifier {
   };
 
   /// Bir dersin görevleri (ders detay sayfası için).
-  List<Task> tasksOf(String subjectId) =>
-      _repository.getBySubjectId(subjectId);
+  List<Task> tasksOf(String subjectId) => _repository.getBySubjectId(subjectId);
 
   /// Ekranda gösterilecek liste: filtre, ders ve arama uygulanmış, sıralı.
   List<Task> get visibleTasks {
@@ -65,6 +69,11 @@ class TasksViewModel extends ChangeNotifier {
   }
 
   void load() {
+    _actionError = null;
+    _refresh();
+  }
+
+  void _refresh() {
     _status = TasksStatus.loading;
     notifyListeners();
     try {
@@ -102,22 +111,33 @@ class TasksViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Yazma işlemini çalıştırır. REST hata verirse (ör. kayıt bulunamadı)
+  /// mesajı [actionError]'a yazılır; her durumda liste yenilenir.
+  Future<void> _write(Future<void> Function() action) async {
+    try {
+      await action();
+      _actionError = null;
+    } catch (e) {
+      _actionError = e.toString();
+    }
+    _refresh();
+  }
+
   Future<void> add(
     String title, {
     String? description,
     String? subjectId,
     TaskPriority priority = TaskPriority.medium,
     DateTime? dueDate,
-  }) async {
-    await _repository.add(
+  }) => _write(
+    () => _repository.add(
       title,
       description: description,
       subjectId: subjectId,
       priority: priority,
       dueDate: dueDate,
-    );
-    load();
-  }
+    ),
+  );
 
   Future<void> update(
     Task task, {
@@ -129,8 +149,8 @@ class TasksViewModel extends ChangeNotifier {
     TaskPriority? priority,
     DateTime? dueDate,
     bool clearDueDate = false,
-  }) async {
-    await _repository.update(
+  }) => _write(
+    () => _repository.update(
       task,
       title: title,
       description: description,
@@ -140,21 +160,15 @@ class TasksViewModel extends ChangeNotifier {
       priority: priority,
       dueDate: dueDate,
       clearDueDate: clearDueDate,
-    );
-    load();
-  }
+    ),
+  );
 
   /// Görevin son tarihini [newDate] gününe taşır.
   Future<void> postpone(Task task, DateTime newDate) =>
       update(task, dueDate: DateTime(newDate.year, newDate.month, newDate.day));
 
-  Future<void> delete(String id) async {
-    await _repository.delete(id);
-    load();
-  }
+  Future<void> delete(String id) => _write(() => _repository.delete(id));
 
-  Future<void> toggleCompleted(Task task) async {
-    await _repository.setCompleted(task, !task.isCompleted);
-    load();
-  }
+  Future<void> toggleCompleted(Task task) =>
+      _write(() => _repository.setCompleted(task, !task.isCompleted));
 }

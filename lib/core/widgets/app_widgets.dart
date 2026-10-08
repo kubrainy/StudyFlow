@@ -272,3 +272,27 @@ class AppSuccessView extends StatelessWidget {
     );
   }
 }
+
+/// Yazma işlemi (ekle, düzenle, sil...) başarısız olunca listenin üstünde
+/// gösterilen tek satırlık hata.
+class AppInlineError extends StatelessWidget {
+  const AppInlineError({super.key, required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        0,
+      ),
+      child: Text(
+        'İşlem başarısız: $message',
+        style: AppTextStyles.bodySm.copyWith(color: AppColors.danger),
+      ),
+    );
+  }
+}
