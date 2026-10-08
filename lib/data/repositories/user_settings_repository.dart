@@ -25,5 +25,4 @@ class UserSettingsRepository {
     await _local.save(updated);
     return updated;
   }
-
 }

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// İsim yazma penceresi. Kaydet'e basılırsa yazılan metni (boş olabilir),
-/// vazgeçilirse null döndürür.
 Future<String?> showEditNameDialog(BuildContext context, String current) {
   return showDialog<String>(
     context: context,

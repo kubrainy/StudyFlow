@@ -13,9 +13,7 @@ class DashboardSummary {
   final int todayCompletedTasks;
   final int goalMinutes;
 
-  /// Bugünün hedefe oranı, 0 ile 1 arası (hedef aşılsa da 1'de kalır).
   double get progress => (todayMinutes / goalMinutes).clamp(0.0, 1.0);
 
-  /// Hedefe kalan dakika; hedef tamamlandıysa 0.
   int get remainingMinutes => math.max(0, goalMinutes - todayMinutes);
 }

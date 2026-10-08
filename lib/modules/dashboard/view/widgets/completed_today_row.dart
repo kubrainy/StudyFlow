@@ -5,7 +5,6 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_widgets.dart';
 
-/// "3 görev · Bugün tamamladın" satırı; basılınca tamamlanan görevlere gider.
 class CompletedTodayRow extends StatelessWidget {
   const CompletedTodayRow({super.key, required this.count, this.onTap});
 
