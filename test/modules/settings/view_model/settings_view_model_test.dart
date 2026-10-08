@@ -85,9 +85,9 @@ void main() {
 
       expect(viewModel.status, SettingsStatus.success);
       expect(viewModel.settings.name, 'Kübra');
-      expect(viewModel.totalStudyMinutes, 65);
-      expect(viewModel.completedTaskCount, 2);
-      expect(viewModel.subjectCount, 2);
+      expect(viewModel.profileStats.totalStudyMinutes, 65);
+      expect(viewModel.profileStats.completedTaskCount, 2);
+      expect(viewModel.profileStats.subjectCount, 2);
     });
 
     test('hiç veri yokken rakamlar sıfırdır', () {
@@ -98,9 +98,9 @@ void main() {
       viewModel.load();
 
       expect(viewModel.status, SettingsStatus.success);
-      expect(viewModel.totalStudyMinutes, 0);
-      expect(viewModel.completedTaskCount, 0);
-      expect(viewModel.subjectCount, 0);
+      expect(viewModel.profileStats.totalStudyMinutes, 0);
+      expect(viewModel.profileStats.completedTaskCount, 0);
+      expect(viewModel.profileStats.subjectCount, 0);
     });
 
     test('okuma hata verirse error durumuna geçer', () {

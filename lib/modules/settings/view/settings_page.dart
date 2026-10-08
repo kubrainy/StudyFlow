@@ -80,9 +80,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
                 ProfileCard(
                   name: settings.name,
-                  totalStudyMinutes: _viewModel.totalStudyMinutes,
-                  completedTaskCount: _viewModel.completedTaskCount,
-                  subjectCount: _viewModel.subjectCount,
+                  stats: _viewModel.profileStats,
                   onEditTap: _editName,
                 ),
                 const SizedBox(height: AppSpacing.lg),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:studyflow/modules/settings/models/profile_stats.dart';
 import 'package:studyflow/modules/settings/view/widgets/profile_card.dart';
 
 Future<void> _pump(
@@ -17,9 +18,11 @@ Future<void> _pump(
             width: width,
             child: ProfileCard(
               name: name,
-              totalStudyMinutes: minutes,
-              completedTaskCount: 25,
-              subjectCount: 4,
+              stats: ProfileStats(
+                totalStudyMinutes: minutes,
+                completedTaskCount: 25,
+                subjectCount: 4,
+              ),
               onEditTap: onEditTap,
             ),
           ),

@@ -6,6 +6,7 @@ import '../../../data/repositories/task_repository.dart';
 import '../../../data/repositories/user_settings_repository.dart';
 import '../../../models/user_settings.dart';
 import '../../pomodoro/view_model/pomodoro_view_model.dart';
+import '../models/profile_stats.dart';
 
 enum SettingsStatus { loading, error, success }
 
@@ -30,33 +31,33 @@ class SettingsViewModel extends ChangeNotifier {
   SettingsStatus _status = SettingsStatus.loading;
   String? _errorMessage;
   UserSettings _settings = const UserSettings();
-  int _totalStudyMinutes = 0;
-  int _completedTaskCount = 0;
-  int _subjectCount = 0;
+  ProfileStats _profileStats = const ProfileStats(
+    totalStudyMinutes: 0,
+    completedTaskCount: 0,
+    subjectCount: 0,
+  );
 
   SettingsStatus get status => _status;
   String? get errorMessage => _errorMessage;
   UserSettings get settings => _settings;
-
-  // Profil kartındaki üç rakam.
-  int get totalStudyMinutes => _totalStudyMinutes;
-  int get completedTaskCount => _completedTaskCount;
-  int get subjectCount => _subjectCount;
+  ProfileStats get profileStats => _profileStats;
 
   void load() {
     _status = SettingsStatus.loading;
     notifyListeners();
     try {
       _settings = _settingsRepository.get();
-      _totalStudyMinutes = _sessionRepository.getAll().fold(
-        0,
-        (sum, s) => sum + s.durationMinutes,
+      _profileStats = ProfileStats(
+        totalStudyMinutes: _sessionRepository.getAll().fold(
+          0,
+          (sum, s) => sum + s.durationMinutes,
+        ),
+        completedTaskCount: _taskRepository
+            .getAll()
+            .where((t) => t.isCompleted)
+            .length,
+        subjectCount: _subjectRepository.getAll().length,
       );
-      _completedTaskCount = _taskRepository
-          .getAll()
-          .where((t) => t.isCompleted)
-          .length;
-      _subjectCount = _subjectRepository.getAll().length;
       _status = SettingsStatus.success;
       _errorMessage = null;
     } catch (e) {

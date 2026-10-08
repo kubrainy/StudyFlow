@@ -6,26 +6,19 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/format_minutes.dart';
 import '../../../../core/utils/upper_tr.dart';
 import '../../../../core/widgets/app_widgets.dart';
+import '../../models/profile_stats.dart';
 
-/// Ayarlar'ın en üstündeki profil kartı: baş harf avatarı, isim, düzenle
-/// düğmesi ve üç özet rakam. İsim boşsa avatarda simge, isim yerine
-/// "Adını ekle" görünür.
 class ProfileCard extends StatelessWidget {
   const ProfileCard({
     super.key,
     required this.name,
-    required this.totalStudyMinutes,
-    required this.completedTaskCount,
-    required this.subjectCount,
+    required this.stats,
     this.onEditTap,
   });
 
   final String name;
-  final int totalStudyMinutes;
-  final int completedTaskCount;
-  final int subjectCount;
+  final ProfileStats stats;
 
-  /// İsim satırındaki kalem düğmesine basılınca çağrılır.
   final VoidCallback? onEditTap;
 
   @override
@@ -66,18 +59,18 @@ class ProfileCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _Stat(
-                  value: formatMinutes(totalStudyMinutes),
+                  value: formatMinutes(stats.totalStudyMinutes),
                   caption: 'toplam çalışma',
                 ),
               ),
               Expanded(
                 child: _Stat(
-                  value: '$completedTaskCount',
+                  value: '${stats.completedTaskCount}',
                   caption: 'biten görev',
                 ),
               ),
               Expanded(
-                child: _Stat(value: '$subjectCount', caption: 'ders'),
+                child: _Stat(value: '${stats.subjectCount}', caption: 'ders'),
               ),
             ],
           ),
