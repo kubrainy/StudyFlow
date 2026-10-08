@@ -2,15 +2,17 @@ import 'package:uuid/uuid.dart';
 
 import '../../models/subject.dart';
 import '../local/subject_local_source.dart';
+import '../remote/subject_remote_source.dart';
 
 class SubjectRepository {
   final SubjectLocalSource _local;
+  final SubjectRemoteSource _remote;
 
-  SubjectRepository(this._local);
+  SubjectRepository(this._local, this._remote);
 
   List<Subject> getAll() => _local.getAll();
 
-  Future<void> delete(String id) => _local.delete(id);
+  Future<void> delete(String id) => _remote.delete(id);
 
   Future<Subject> add(String name, String? description) async {
     final now = DateTime.now();
@@ -22,8 +24,7 @@ class SubjectRepository {
       updatedAt: now,
       totalStudyMinutes: 0,
     );
-    await _local.save(subject);
-    return subject;
+    return _remote.create(subject);
   }
 
   Future<Subject> update(
@@ -37,7 +38,6 @@ class SubjectRepository {
       clearDescription: description == null,
       updatedAt: DateTime.now(),
     );
-    await _local.save(updated);
-    return updated;
+    return _remote.update(updated);
   }
 }
