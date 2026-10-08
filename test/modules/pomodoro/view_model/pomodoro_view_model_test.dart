@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:studyflow/core/notifications/notification_service.dart';
 import 'package:studyflow/data/repositories/study_session_repository.dart';
 import 'package:studyflow/data/repositories/subject_repository.dart';
 import 'package:studyflow/data/repositories/user_settings_repository.dart';
@@ -15,17 +18,23 @@ class MockSubjectRepository extends Mock implements SubjectRepository {}
 class MockUserSettingsRepository extends Mock
     implements UserSettingsRepository {}
 
+class MockNotificationService extends Mock implements NotificationService {}
+
 void main() {
   late MockStudySessionRepository sessions;
   late MockUserSettingsRepository settings;
   late MockSubjectRepository subjectRepository;
+  late MockNotificationService notifications;
   late PomodoroViewModel viewModel;
   late DateTime now;
 
   /// Sahte saati ileri sarar; testte gerçekten beklemeyiz.
   void pass(Duration duration) => now = now.add(duration);
 
-  setUpAll(() => registerFallbackValue(DateTime(2026)));
+  setUpAll(() {
+    registerFallbackValue(DateTime(2026));
+    registerFallbackValue(Duration.zero);
+  });
 
   setUp(() {
     now = DateTime(2026, 10, 6, 10);
@@ -38,10 +47,15 @@ void main() {
           StudySession(id: 's', startedAt: DateTime(2026), durationMinutes: 1),
     );
     subjectRepository = MockSubjectRepository();
+    notifications = MockNotificationService();
+    when(() => notifications.requestPermission()).thenAnswer((_) async => true);
+    when(() => notifications.scheduleFinish(any())).thenAnswer((_) async {});
+    when(() => notifications.cancelFinish()).thenAnswer((_) async {});
     viewModel = PomodoroViewModel(
       sessions,
       settings,
       subjectRepository,
+      notifications,
       now: () => now,
     );
   });
@@ -431,8 +445,7 @@ void main() {
     var notified = 0;
     viewModel.addListener(() => notified++);
 
-    await viewModel
-        .finishEarly(); // mola aşaması: kayıt yok, ama durum değişir
+    await viewModel.finishEarly(); // mola aşaması: kayıt yok, ama durum değişir
     expect(notified, 1);
 
     viewModel.start();
@@ -567,6 +580,188 @@ void main() {
 
       expect(viewModel.durationRange, PomodoroViewModel.restRange);
       expect(viewModel.durationRange.step, 1);
+    });
+  });
+
+  // ViewModel bildirimi beklemeden (unawaited) çağırır; mock cevaplarının
+  // işlenmesi için olay kuyruğunu boşalt.
+  group('bitiş bildirimi', () {
+    group('planlama', () {
+      test('start izin ister ve kalan süre kadar sonrasına planlar', () async {
+        viewModel.start();
+        await pumpEventQueue();
+
+        verify(() => notifications.requestPermission()).called(1);
+        verify(() => notifications.scheduleFinish(const Duration(minutes: 25)))
+            .called(1);
+      });
+
+      test('resume planı kalan süreye göre yeniden kurar', () async {
+        viewModel.start();
+        await pumpEventQueue();
+        pass(const Duration(minutes: 5));
+        viewModel.pause();
+        pass(const Duration(minutes: 20));
+
+        viewModel.resume();
+        await pumpEventQueue();
+
+        verify(() => notifications.scheduleFinish(const Duration(minutes: 20)))
+            .called(1);
+      });
+
+      test('mola aşamasında izin istemez, planlamaz', () async {
+        await viewModel.switchPhase(PomodoroPhase.rest);
+
+        viewModel.start();
+        await pumpEventQueue();
+
+        verifyNever(() => notifications.requestPermission());
+        verifyNever(() => notifications.scheduleFinish(any()));
+      });
+
+      test('çalışma bitip mola başlayınca yeni plan kurulmaz', () async {
+        viewModel.start();
+        await pumpEventQueue();
+        pass(const Duration(minutes: 25));
+
+        await viewModel.tick();
+        await pumpEventQueue();
+
+        verify(() => notifications.scheduleFinish(any())).called(1);
+      });
+
+      test('Ayarlar\'da bildirim kapalıysa hiçbir şey yapmaz', () async {
+        when(() => settings.get()).thenReturn(
+          const UserSettings(
+            pomodoroMinutes: 25,
+            breakMinutes: 5,
+            notificationsEnabled: false,
+          ),
+        );
+
+        viewModel.start();
+        await pumpEventQueue();
+
+        verifyNever(() => notifications.requestPermission());
+        verifyNever(() => notifications.scheduleFinish(any()));
+        expect(viewModel.status, PomodoroStatus.running);
+      });
+
+      test('izin verilmediyse planlamaz, sayaç yine çalışır', () async {
+        when(() => notifications.requestPermission())
+            .thenAnswer((_) async => false);
+
+        viewModel.start();
+        await pumpEventQueue();
+
+        verifyNever(() => notifications.scheduleFinish(any()));
+        expect(viewModel.status, PomodoroStatus.running);
+      });
+
+      test('izin penceresi açıkken duraklatılırsa plan kurulmaz', () async {
+        final answer = Completer<bool>();
+        when(() => notifications.requestPermission())
+            .thenAnswer((_) => answer.future);
+
+        viewModel.start();
+        viewModel.pause();
+        answer.complete(true);
+        await pumpEventQueue();
+
+        verifyNever(() => notifications.scheduleFinish(any()));
+      });
+
+      test('izin penceresi açıkken sıfırlanırsa plan kurulmaz', () async {
+        final answer = Completer<bool>();
+        when(() => notifications.requestPermission())
+            .thenAnswer((_) => answer.future);
+
+        viewModel.start();
+        viewModel.reset();
+        answer.complete(true);
+        await pumpEventQueue();
+
+        verifyNever(() => notifications.scheduleFinish(any()));
+      });
+    });
+
+    group('iptal', () {
+      test('pause planı iptal eder', () async {
+        viewModel.start();
+        await pumpEventQueue();
+
+        viewModel.pause();
+        await pumpEventQueue();
+
+        verify(() => notifications.cancelFinish()).called(1);
+      });
+
+      test('reset planı iptal eder', () async {
+        viewModel.start();
+        await pumpEventQueue();
+
+        viewModel.reset();
+        await pumpEventQueue();
+
+        verify(() => notifications.cancelFinish()).called(1);
+      });
+
+      test('finishEarly planı iptal eder', () async {
+        viewModel.start();
+        pass(const Duration(minutes: 3));
+        await pumpEventQueue();
+
+        await viewModel.finishEarly();
+        await pumpEventQueue();
+
+        verify(() => notifications.cancelFinish()).called(1);
+      });
+
+      test('çalışırken molaya geçmek planı iptal eder', () async {
+        viewModel.start();
+        await pumpEventQueue();
+
+        await viewModel.switchPhase(PomodoroPhase.rest);
+        await pumpEventQueue();
+
+        verify(() => notifications.cancelFinish()).called(1);
+      });
+
+      test('hazırken molaya geçmek iptal çağırmaz', () async {
+        await viewModel.switchPhase(PomodoroPhase.rest);
+        await pumpEventQueue();
+
+        verifyNever(() => notifications.cancelFinish());
+      });
+    });
+
+    group('hata', () {
+      test('planlama hata verse de sayaç ve oturum kaydı bozulmaz', () async {
+        when(() => notifications.scheduleFinish(any()))
+            .thenAnswer((_) async => throw Exception('bildirim patladı'));
+
+        viewModel.start();
+        await pumpEventQueue();
+        pass(const Duration(minutes: 25));
+        await viewModel.tick();
+
+        expect(viewModel.errorMessage, isNull);
+        expect(viewModel.phase, PomodoroPhase.rest);
+        verify(() => sessions.add(any(), any(), 25)).called(1);
+      });
+
+      test('iptal hata verse de duraklatma çalışır', () async {
+        when(() => notifications.cancelFinish())
+            .thenAnswer((_) async => throw Exception('bildirim patladı'));
+
+        viewModel.start();
+        viewModel.pause();
+        await pumpEventQueue();
+
+        expect(viewModel.status, PomodoroStatus.paused);
+        expect(viewModel.errorMessage, isNull);
+      });
     });
   });
 }

@@ -6,6 +6,7 @@ import '../../../data/repositories/study_session_repository.dart';
 import '../../../data/repositories/subject_repository.dart';
 import '../../../data/repositories/user_settings_repository.dart';
 import '../../../models/subject.dart';
+import '../../../core/notifications/notification_service.dart';
 
 enum PomodoroPhase { work, rest }
 
@@ -15,12 +16,14 @@ class PomodoroViewModel extends ChangeNotifier {
   final StudySessionRepository _sessions;
   final UserSettingsRepository _settings;
   final SubjectRepository _subjectRepository;
+  final NotificationService _notifications;
   final DateTime Function() _now;
 
   PomodoroViewModel(
     this._sessions,
     this._settings,
-    this._subjectRepository, {
+    this._subjectRepository,
+    this._notifications, {
     DateTime Function()? now,
   }) : _now = now ?? DateTime.now;
 
@@ -160,6 +163,7 @@ class PomodoroViewModel extends ChangeNotifier {
     if (_status != PomodoroStatus.idle) return;
     _errorMessage = null;
     _beginPhase(_phase, _now());
+    unawaited(_scheduleFinishNotification());
     notifyListeners();
   }
 
@@ -169,6 +173,7 @@ class PomodoroViewModel extends ChangeNotifier {
     _runningSince = null;
     _status = PomodoroStatus.paused;
     _stopTicker();
+    unawaited(_cancelFinishNotification());
     notifyListeners();
   }
 
@@ -177,12 +182,14 @@ class PomodoroViewModel extends ChangeNotifier {
     _runningSince = _now();
     _status = PomodoroStatus.running;
     _startTicker();
+    unawaited(_scheduleFinishNotification());
     notifyListeners();
   }
 
   /// Vazgeç: hiçbir şey kaydetmeden başa döner.
   void reset() {
     _clear();
+    unawaited(_cancelFinishNotification());
     notifyListeners();
   }
 
@@ -207,6 +214,7 @@ class PomodoroViewModel extends ChangeNotifier {
     final shouldSave =
         _phase == PomodoroPhase.work && minutes >= minSavedMinutes;
     _clear();
+    unawaited(_cancelFinishNotification());
     _phase = next;
     notifyListeners();
     if (shouldSave && startedAt != null) {
@@ -254,6 +262,26 @@ class PomodoroViewModel extends ChangeNotifier {
       _errorMessage = e.toString();
       notifyListeners();
     }
+  }
+
+  /// Çalışma aşamasının bitiş bildirimini kurar. Mola aşamasında ya da
+  /// Ayarlar'da bildirim kapalıysa hiçbir şey yapmaz. Hata Pomodoro'yu
+  /// durdurmasın diye yutulur.
+  Future<void> _scheduleFinishNotification() async {
+    if (_phase != PomodoroPhase.work) return;
+    if (!_settings.get().notificationsEnabled) return;
+    try {
+      final granted = await _notifications.requestPermission();
+      // İzin penceresi açıkken kullanıcı duraklatmış ya da sıfırlamış olabilir.
+      if (!granted || _status != PomodoroStatus.running) return;
+      await _notifications.scheduleFinish(remaining);
+    } catch (_) {}
+  }
+
+  Future<void> _cancelFinishNotification() async {
+    try {
+      await _notifications.cancelFinish();
+    } catch (_) {}
   }
 
   void _beginPhase(PomodoroPhase phase, DateTime at) {
