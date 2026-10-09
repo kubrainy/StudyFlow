@@ -31,7 +31,6 @@ class _PomodoroPageState extends State<PomodoroPage> {
     super.initState();
     _viewModel = widget.viewModel ?? inject<PomodoroViewModel>();
 
-    // Seçili ders sonradan silinmişse (Dersler sekmesinden) serbest çalışmaya dön.
     final id = _viewModel.subjectId;
     if (id != null && _viewModel.findSubject(id) == null) {
       _viewModel.selectSubject(null);
