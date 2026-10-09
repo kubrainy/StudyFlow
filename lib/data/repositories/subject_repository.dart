@@ -10,7 +10,13 @@ class SubjectRepository {
 
   SubjectRepository(this._local, this._remote);
 
-  List<Subject> getAll() => _local.getAll();
+  /// Eklenme sırasıyla (eskiden yeniye). Hive kayıtları rastgele kimlik
+  /// sırasıyla döndürdüğü için sıralamazsak yeni ders listede rastgele yere düşer.
+  List<Subject> getAll() => _local.getAll().toList()
+    ..sort((a, b) {
+      final byDate = a.createdAt.compareTo(b.createdAt);
+      return byDate != 0 ? byDate : a.name.compareTo(b.name);
+    });
 
   Future<void> delete(String id) => _remote.delete(id);
 

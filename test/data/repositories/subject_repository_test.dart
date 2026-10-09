@@ -54,6 +54,31 @@ void main() {
       verifyNever(() => remote.getAll());
     });
 
+    test('getAll dersleri eklenme sırasına dizer (kimlik sırasına değil)', () {
+      final first = subject.copyWith(name: 'Fizik');
+      final second = Subject(
+        id: 'aaa-000', // kimliği alfabede önce gelir, ama sonra eklendi
+        name: 'Kimya',
+        createdAt: DateTime(2026, 10, 2),
+        updatedAt: DateTime(2026, 10, 2),
+        totalStudyMinutes: 0,
+      );
+      final sameDay = Subject(
+        id: 'zzz-999',
+        name: 'Biyoloji',
+        createdAt: DateTime(2026, 10, 2),
+        updatedAt: DateTime(2026, 10, 2),
+        totalStudyMinutes: 0,
+      );
+      // Hive'ın verdiği sıra: kimliğe göre.
+      when(() => local.getAll()).thenReturn(List.unmodifiable([second, first, sameDay]));
+
+      final result = repository.getAll();
+
+      // Aynı gün eklenenler ada göre: Biyoloji, Kimya.
+      expect(result.map((s) => s.name), ['Fizik', 'Biyoloji', 'Kimya']);
+    });
+
     test('add yeni ders oluşturur ve REST\'e (POST) iletir', () async {
       final result = await repository.add('Fizik', 'Mekanik');
 
