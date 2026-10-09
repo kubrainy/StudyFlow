@@ -27,6 +27,9 @@ class PomodoroRing extends StatelessWidget {
 
   final Widget? footer;
 
+  /// İçeriğin halka çizgisinden (8 px) uzak durması için bırakılan pay.
+  static const _contentInset = 12.0;
+
   @override
   Widget build(BuildContext context) {
     final accent = isRest ? AppColors.secondary : AppColors.textSecondary;
@@ -41,30 +44,41 @@ class PomodoroRing extends StatelessWidget {
             size: Size.square(size),
             painter: _RingPainter(progress: progress, isRest: isRest),
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                timeText,
-                style:
-                    (size >= PomodoroSizes.ringLargeText
-                            ? AppTextStyles.timerDisplay
-                            : AppTextStyles.timerDisplayMobile)
-                        .copyWith(color: AppColors.textPrimary),
+          // Halka sabit boyutlu; yazı büyütülünce (küçük halkada, örneğin yatay
+          // telefonda) içerik halkadan taşmasın diye sığana kadar küçülür.
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: size - _contentInset * 2,
+              maxHeight: size - _contentInset * 2,
+            ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    timeText,
+                    style:
+                        (size >= PomodoroSizes.ringLargeText
+                                ? AppTextStyles.timerDisplay
+                                : AppTextStyles.timerDisplayMobile)
+                            .copyWith(color: AppColors.textPrimary),
+                  ),
+                  Text(
+                    upperTr(label),
+                    style: AppTextStyles.bodySm.copyWith(
+                      color: accent,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  if (footer != null) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    footer!,
+                  ],
+                ],
               ),
-              Text(
-                upperTr(label),
-                style: AppTextStyles.bodySm.copyWith(
-                  color: accent,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1,
-                ),
-              ),
-              if (footer != null) ...[
-                const SizedBox(height: AppSpacing.xs),
-                footer!,
-              ],
-            ],
+            ),
           ),
         ],
       ),

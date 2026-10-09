@@ -170,33 +170,28 @@ class AppEmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: AppIconSize.state, color: AppColors.textDisabled),
-            const SizedBox(height: AppSpacing.md),
+    return _CenteredScroll(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: AppIconSize.state, color: AppColors.textDisabled),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            title,
+            style: AppTextStyles.titleMd.copyWith(color: AppColors.textPrimary),
+            textAlign: TextAlign.center,
+          ),
+          if (message != null) ...[
+            const SizedBox(height: AppSpacing.xs),
             Text(
-              title,
-              style: AppTextStyles.titleMd.copyWith(
-                color: AppColors.textPrimary,
+              message!,
+              style: AppTextStyles.bodyMd.copyWith(
+                color: AppColors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
-            if (message != null) ...[
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                message!,
-                style: AppTextStyles.bodyMd.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
           ],
-        ),
+        ],
       ),
     );
   }
@@ -210,31 +205,26 @@ class AppErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              size: AppIconSize.state,
-              color: AppColors.danger,
-            ),
+    return _CenteredScroll(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.error_outline,
+            size: AppIconSize.state,
+            color: AppColors.danger,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            message,
+            style: AppTextStyles.bodyLg.copyWith(color: AppColors.textPrimary),
+            textAlign: TextAlign.center,
+          ),
+          if (onRetry != null) ...[
             const SizedBox(height: AppSpacing.md),
-            Text(
-              message,
-              style: AppTextStyles.bodyLg.copyWith(
-                color: AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (onRetry != null) ...[
-              const SizedBox(height: AppSpacing.md),
-              AppSecondaryButton(label: 'Tekrar dene', onPressed: onRetry),
-            ],
+            AppSecondaryButton(label: 'Tekrar dene', onPressed: onRetry),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -247,26 +237,45 @@ class AppSuccessView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.check_circle_outline,
-              size: AppIconSize.state,
-              color: AppColors.secondary,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              message,
-              style: AppTextStyles.bodyLg.copyWith(
-                color: AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+    return _CenteredScroll(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.check_circle_outline,
+            size: AppIconSize.state,
+            color: AppColors.secondary,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            message,
+            style: AppTextStyles.bodyLg.copyWith(color: AppColors.textPrimary),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// İçeriği boş alanın ortasına koyar; alan yetmezse (yatay telefon, büyük
+/// yazı) taşmak yerine kaydırılır.
+class _CenteredScroll extends StatelessWidget {
+  const _CenteredScroll({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    const padding = AppSpacing.lg;
+    return LayoutBuilder(
+      builder: (context, box) => SingleChildScrollView(
+        padding: const EdgeInsets.all(padding),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: box.hasBoundedHeight ? box.maxHeight - 2 * padding : 0,
+          ),
+          child: Center(child: child),
         ),
       ),
     );

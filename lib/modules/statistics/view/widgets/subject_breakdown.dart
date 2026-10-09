@@ -95,6 +95,16 @@ class _LegendRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Dar kartta (iki kolonlu tablet düzeni) büyük yazıyla satır sığmaz; ders
+    // adı kısaltılabilir ama süre ve yüzde kısaltılamaz. Bu yüzden satırın
+    // yazısı en çok 1.3 kat büyür.
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.3,
+      child: _row(),
+    );
+  }
+
+  Widget _row() {
     return Row(
       children: [
         Container(

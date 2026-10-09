@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:studyflow/app_module.dart';
 import 'package:studyflow/app_widget.dart';
@@ -50,10 +49,7 @@ class MockNotificationService extends Mock implements NotificationService {}
 /// ya da başka layout hatası olup olmadığına bakar. Veri bilerek zorludur:
 /// uzun ders adı, uzun görev başlığı, uzun kullanıcı adı, 50 saati aşan süre.
 void main() {
-  GoogleFonts.config.allowRuntimeFetching = false;
-
-  var fontsLoaded = false;
-  setUpAll(() async => fontsLoaded = await loadTestFonts());
+  setUpAll(loadAppFonts);
 
   const sizes = [
     ('küçük telefon', Size(320, 568)),
@@ -248,6 +244,21 @@ void main() {
     ),
     'Dersler': () =>
         SubjectsPage(viewModel: SubjectsViewModel(subjectRepo, taskRepo)),
+    'Dersler (boş)': () {
+      final empty = MockSubjectRepository();
+      when(() => empty.getAll()).thenReturn([]);
+      return SubjectsPage(viewModel: SubjectsViewModel(empty, taskRepo));
+    },
+    'Dersler (okuma hatası)': () {
+      final broken = MockSubjectRepository();
+      when(() => broken.getAll()).thenThrow(
+        Exception(
+          'Veritabanı açılamadı: bu, birkaç satıra yayılacak kadar uzun '
+          'bir hata mesajıdır.',
+        ),
+      );
+      return SubjectsPage(viewModel: SubjectsViewModel(broken, taskRepo));
+    },
     'Ders detayı (uzun adlı)': () => SubjectDetailPage(
       subjectId: 'long',
       viewModel: SubjectsViewModel(subjectRepo, taskRepo),
@@ -287,10 +298,6 @@ void main() {
           '$pageName · $sizeName ${size.width.toInt()}×${size.height.toInt()}'
           ' · yazı $scale×',
           (tester) async {
-            if (!fontsLoaded) {
-              markTestSkipped('Flutter SDK fontları bulunamadı');
-              return;
-            }
             tester.view.physicalSize = size;
             tester.view.devicePixelRatio = 1;
             addTearDown(tester.view.reset);
@@ -349,10 +356,6 @@ void main() {
           '$sheetName · $sizeName ${size.width.toInt()}×${size.height.toInt()}'
           ' · yazı $scale×',
           (tester) async {
-            if (!fontsLoaded) {
-              markTestSkipped('Flutter SDK fontları bulunamadı');
-              return;
-            }
             tester.view.physicalSize = size;
             tester.view.devicePixelRatio = 1;
             addTearDown(tester.view.reset);
@@ -405,10 +408,6 @@ void main() {
           '${size.width.toInt()}×${size.height.toInt()} · yazı $scale×', (
         tester,
       ) async {
-        if (!fontsLoaded) {
-          markTestSkipped('Flutter SDK fontları bulunamadı');
-          return;
-        }
         tester.view.physicalSize = size;
         tester.view.devicePixelRatio = 1;
         tester.platformDispatcher.textScaleFactorTestValue = scale;
