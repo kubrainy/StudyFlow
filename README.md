@@ -96,11 +96,16 @@ flutter run
 ```bash
 flutter analyze     # statik analiz
 flutter test        # birim ve widget testleri
+flutter test integration_test/app_flow_test.dart -d windows   # tam akış (~1 dk)
 ```
 
 Testler `test/` altında, `lib/` ile aynı klasör düzenindedir (`test/modules/<modül>/view_model`, `view`, `view/widgets`). Repository'ler `mocktail` ile taklit edilir; böylece ViewModel testleri gerçek veritabanına ihtiyaç duymaz.
 
-Şu an kapsananlar: Repository'ler (hem taklit kaynaklarla hem gerçek Dio zinciriyle), Dio katmanı ve yerel adaptör, ViewModel'ler, bildirim servisi, istatistik hesapları, ortak bileşenler ve modüllerin widget'ları. Integration testleri henüz yazılmadı.
+Şu an kapsananlar: Repository'ler (hem taklit kaynaklarla hem gerçek Dio zinciriyle), Dio katmanı ve yerel adaptör, ViewModel'ler, bildirim servisi, istatistik hesapları, ortak bileşenler ve modüllerin widget'ları.
+
+**Layout testi** (`test/layout/screen_sizes_test.dart`): tüm sayfaları, alt panelleri (klavye açıkken de) ve alt menüyü 7 ekran boyutunda (küçük telefondan yatay tablete) ve 3 yazı ölçeğinde (normal, 1.3×, 1.6×) çizer; taşma ya da kesilen etiket varsa düşer. Testlerde yazılar varsayılan olarak gerçeğinden iki kat geniş çizildiği için bu test Flutter SDK'daki Roboto fontunu yükler (SDK yolu `FLUTTER_ROOT` ile bulunur; bulunamazsa test atlanır).
+
+**Integration testi** (`integration_test/app_flow_test.dart`): uygulamayı gerçek Hive ile (geçici klasörde) açıp ders oluşturur, ona bağlı görev oluşturup tamamlar, o derse bağlı Pomodoro'yu 1 dakikadan fazla çalıştırıp erken bitirir, oturum kaydını (ders ve süre) ve İstatistikler ile ders kartındaki güncellemeyi kontrol eder. Pomodoro gerçek saatle çalıştığı için test yaklaşık 1 dakika sürer. Masaüstü penceresi ekranda görünür olmalıdır; pencere gizliyken test kare bekleyip zaman aşımına uğrayabilir.
 
 **İnternetsiz cihaz doğrulaması** (Android 15 telefon, hiçbir ağ bağlı değil): ders ekleme ve silme (bağlı görevlerle birlikte), görev ekleme ve tamamlama, derse bağlı Pomodoro oturumu kaydı, Pomodoro başlarken bitiş alarmının kurulması, duraklatınca iptal edilmesi, devam edince yeniden kurulması, bitirince iptal edilmesi ve İstatistikler ekranındaki rakamlar sorunsuz çalıştı.
 
@@ -113,6 +118,7 @@ Eklenecek.
 - Bildirim yalnızca Android'de ve yalnızca çalışma aşamasının bitişinde gelir; mola bitişinde bildirim yok. Telefon yeniden başlarsa Pomodoro sayacı ve planlanmış bildirim sıfırlanır.
 - REST katmanı gerçek bir sunucuyla konuşmaz: Dio isteklerini uygulamanın içindeki sahte sunucu (`LocalApiAdapter`) karşılar ve Hive'a yazar, internete hiç çıkılmaz. Ders ve görev yazma işleri (ekle, düzenle, sil, tamamla) bu yoldan gider; listeler Hive'dan okunur, yani GET uygulama akışında kullanılmaz. Çalışma oturumları ve ayarlar REST dışındadır.
 - Bir kayıt arada silinmişken düzenlenmeye ya da silinmeye çalışılırsa sahte sunucu 404 döner, sayfanın üstünde "İşlem başarısız: Kayıt bulunamadı." yazar. Ders silinirken görev silme yarıda hata verirse o ana kadar silinen görevler geri gelmez.
-- Integration testleri ve release build (APK/AAB) henüz yapılmadı.
+- Release build (APK/AAB) henüz yapılmadı.
+- Yazı boyutu en uç değerde (2.0×) iken küçük tablet genişliğinde (600 px) Dersler'de yaklaşık 2, İstatistikler'de 10–25 piksel, yatay telefonda Pomodoro halkasında yaklaşık 120 piksel taşma olur. Dikey telefonlarda 2.0×'te de taşma yoktur; 1.6×'e kadar tüm boyutlar temizdir.
 - İstatistiklerdeki "bu hafta biten görev" sayısı, tamamlanma tarihi kaydedilmemiş eski görevleri saymaz.
 - İstatistiklerdeki "Derslere göre" bölümü haftalık değil, tüm zamanları toplar.
