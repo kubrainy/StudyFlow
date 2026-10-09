@@ -15,7 +15,9 @@ import 'widgets/pomodoro_sizes.dart';
 import 'widgets/pomodoro_subject.dart';
 
 class PomodoroPage extends StatefulWidget {
-  const PomodoroPage({super.key});
+  const PomodoroPage({super.key, this.viewModel});
+
+  final PomodoroViewModel? viewModel;
 
   @override
   State<PomodoroPage> createState() => _PomodoroPageState();
@@ -27,7 +29,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
   @override
   void initState() {
     super.initState();
-    _viewModel = inject<PomodoroViewModel>();
+    _viewModel = widget.viewModel ?? inject<PomodoroViewModel>();
 
     // Seçili ders sonradan silinmişse (Dersler sekmesinden) serbest çalışmaya dön.
     final id = _viewModel.subjectId;

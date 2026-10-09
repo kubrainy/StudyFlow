@@ -16,14 +16,21 @@ import '../view_model/subjects_view_model.dart';
 import 'subject_actions.dart';
 
 class SubjectDetailPage extends StatelessWidget {
-  const SubjectDetailPage({super.key, required this.subjectId});
+  const SubjectDetailPage({
+    super.key,
+    required this.subjectId,
+    this.viewModel,
+    this.tasksViewModel,
+  });
 
   final String subjectId;
+  final SubjectsViewModel? viewModel;
+  final TasksViewModel? tasksViewModel;
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = inject<SubjectsViewModel>();
-    final tasksViewModel = inject<TasksViewModel>();
+    final viewModel = this.viewModel ?? inject<SubjectsViewModel>();
+    final tasksViewModel = this.tasksViewModel ?? inject<TasksViewModel>();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Ders detayı')),
@@ -38,7 +45,13 @@ class SubjectDetailPage extends StatelessWidget {
             );
           }
           final tasks = tasksViewModel.tasksOf(subjectId);
-          return _buildContent(context, subject, tasks, tasksViewModel);
+          return _buildContent(
+            context,
+            subject,
+            tasks,
+            viewModel,
+            tasksViewModel,
+          );
         },
       ),
     );
@@ -48,6 +61,7 @@ class SubjectDetailPage extends StatelessWidget {
     BuildContext context,
     Subject subject,
     List<Task> tasks,
+    SubjectsViewModel viewModel,
     TasksViewModel tasksViewModel,
   ) {
     final description = subject.description;
@@ -57,8 +71,7 @@ class SubjectDetailPage extends StatelessWidget {
       children: [
         GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () =>
-              showSubjectForm(context, inject<SubjectsViewModel>(), subject),
+          onTap: () => showSubjectForm(context, viewModel, subject),
           child: AppCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

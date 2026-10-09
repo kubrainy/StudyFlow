@@ -51,7 +51,7 @@ class _SubjectFormState extends State<SubjectForm> {
   Widget build(BuildContext context) {
     final isEdit = widget.subject != null;
 
-    return Padding(
+    return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.lg,
         AppSpacing.lg,

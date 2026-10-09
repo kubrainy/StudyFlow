@@ -14,7 +14,9 @@ import 'task_actions.dart';
 import 'widgets/task_card.dart';
 
 class TasksPage extends StatefulWidget {
-  const TasksPage({super.key});
+  const TasksPage({super.key, this.viewModel});
+
+  final TasksViewModel? viewModel;
 
   @override
   State<TasksPage> createState() => _TasksPageState();
@@ -43,7 +45,7 @@ class _TasksPageState extends State<TasksPage> {
   @override
   void initState() {
     super.initState();
-    _viewModel = inject<TasksViewModel>();
+    _viewModel = widget.viewModel ?? inject<TasksViewModel>();
     _viewModel.load();
   }
 
@@ -172,7 +174,7 @@ class _TasksPageState extends State<TasksPage> {
         crossAxisCount: columns,
         mainAxisSpacing: AppSpacing.listGap,
         crossAxisSpacing: AppSpacing.gutterTablet,
-        mainAxisExtent: 130,
+        mainAxisExtent: Responsive.gridExtent(context, 130),
       ),
       itemBuilder: (_, i) => cardAt(i),
     );

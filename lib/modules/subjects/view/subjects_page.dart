@@ -117,7 +117,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
         crossAxisCount: columns,
         mainAxisSpacing: AppSpacing.listGap,
         crossAxisSpacing: AppSpacing.gutterTablet,
-        mainAxisExtent: 170,
+        mainAxisExtent: Responsive.gridExtent(context, 170),
       ),
       itemBuilder: (_, i) => cardAt(i),
     );

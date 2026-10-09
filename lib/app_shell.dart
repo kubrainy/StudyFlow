@@ -50,12 +50,16 @@ class _AppShellState extends State<AppShell> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(tab.icon, color: _colorFor(tab, path)),
-                          Text(
-                            tab.label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.bodySm.copyWith(
-                              color: _colorFor(tab, path),
+                          // Dar ekranda ya da büyük yazıda etiket kesilmesin
+                          // ("İstatist…"), sığana kadar küçülsün.
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              tab.label,
+                              maxLines: 1,
+                              style: AppTextStyles.bodySm.copyWith(
+                                color: _colorFor(tab, path),
+                              ),
                             ),
                           ),
                         ],
