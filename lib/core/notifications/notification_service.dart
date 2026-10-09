@@ -18,7 +18,7 @@ class NotificationService {
   Future<void> _init() => _ready ??= _plugin
       .initialize(
         settings: const InitializationSettings(
-          android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+          android: AndroidInitializationSettings('@drawable/ic_stat_studyflow'),
         ),
       )
       .then((_) {});

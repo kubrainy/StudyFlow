@@ -88,13 +88,13 @@ void main() {
     await pumpPage(tester, const Size(360, 900));
 
     expect(find.text('Merhaba, Kübra'), findsOneWidget);
-    expect(find.text('Ana sayfa'), findsNothing);
+    expect(find.text('StudyFlow'), findsNothing);
   });
 
-  testWidgets('isim yoksa başlık "Ana sayfa" kalır', (tester) async {
+  testWidgets('isim yoksa başlıkta uygulamanın adı "StudyFlow" yazar', (tester) async {
     await pumpPage(tester, const Size(360, 900));
 
-    expect(find.text('Ana sayfa'), findsOneWidget);
+    expect(find.text('StudyFlow'), findsOneWidget);
     expect(find.textContaining('Merhaba'), findsNothing);
   });
 

@@ -32,7 +32,7 @@ Durum tablosu, proje ilerledikçe güncellenir.
 | HTTP katmanı | `dio` |
 | Grafik | `fl_chart` |
 | Bildirim | `flutter_local_notifications` |
-| Yazı tipi, tarih | `google_fonts`, `intl` |
+| Yazı tipi, tarih | `google_fonts` (Plus Jakarta Sans ve JetBrains Mono `google_fonts/` klasöründe gömülü, internet gerekmez; lisanslar SIL OFL 1.1), `intl` |
 | Kimlik üretimi | `uuid` |
 | Test | `flutter_test`, `mocktail`, `integration_test` |
 
@@ -91,6 +91,22 @@ flutter pub get
 flutter run
 ```
 
+### Release APK
+
+```bash
+flutter build apk --release
+```
+
+APK `build/app/outputs/flutter-apk/app-release.apk` yoluna çıkar. Release imzası `android/key.properties` dosyasından ve `android/app/studyflow-release.jks` anahtarından okunur; ikisi de git'e girmez. Bu dosyalar yoksa (örneğin proje yeni klonlandıysa) Gradle debug anahtarıyla imzalar, yani proje yine derlenir ama bu APK mağazaya yüklenemez.
+
+### Uygulama ikonu
+
+İkon koddan çizilir ve Android klasörlerine PNG olarak yazılır (normal, uyarlanabilir, Android 13 tek renkli tema ikonu ve bildirim simgesi). Çizim `tool/icon/app_icon_painter.dart` içindedir; yeniden üretmek için:
+
+```bash
+ICON_MODE=install ICON_DESIGN=halkaKitapYigini flutter test tool/icon/generate_icons_test.dart
+```
+
 ## Testler
 
 ```bash
@@ -103,9 +119,11 @@ Testler `test/` altında, `lib/` ile aynı klasör düzenindedir (`test/modules/
 
 Şu an kapsananlar: Repository'ler (hem taklit kaynaklarla hem gerçek Dio zinciriyle), Dio katmanı ve yerel adaptör, ViewModel'ler, bildirim servisi, istatistik hesapları, ortak bileşenler ve modüllerin widget'ları.
 
-**Layout testi** (`test/layout/screen_sizes_test.dart`): tüm sayfaları, alt panelleri (klavye açıkken de) ve alt menüyü 7 ekran boyutunda (küçük telefondan yatay tablete) ve 3 yazı ölçeğinde (normal, 1.3×, 1.6×) çizer; taşma ya da kesilen etiket varsa düşer. Testlerde yazılar varsayılan olarak gerçeğinden iki kat geniş çizildiği için bu test Flutter SDK'daki Roboto fontunu yükler (SDK yolu `FLUTTER_ROOT` ile bulunur; bulunamazsa test atlanır).
+**Layout testi** (`test/layout/screen_sizes_test.dart`): tüm sayfaları, alt panelleri (klavye açıkken de) ve alt menüyü 7 ekran boyutunda (küçük telefondan yatay tablete) ve 3 yazı ölçeğinde (normal, 1.3×, 1.6×) çizer; taşma ya da kesilen etiket varsa düşer. Boş ve hata durumları da dahildir. Testlerde yazılar varsayılan olarak gerçeğinden iki kat geniş çizildiği için test, projeye gömülü gerçek yazı tiplerini (`google_fonts/`) yükleyip onlarla ölçer.
 
 **Integration testi** (`integration_test/app_flow_test.dart`): uygulamayı gerçek Hive ile (geçici klasörde) açıp ders oluşturur, ona bağlı görev oluşturup tamamlar, o derse bağlı Pomodoro'yu 1 dakikadan fazla çalıştırıp erken bitirir, oturum kaydını (ders ve süre) ve İstatistikler ile ders kartındaki güncellemeyi kontrol eder. Pomodoro gerçek saatle çalıştığı için test yaklaşık 1 dakika sürer. Masaüstü penceresi ekranda görünür olmalıdır; pencere gizliyken test kare bekleyip zaman aşımına uğrayabilir.
+
+**Temiz kurulum doğrulaması** (imzalı release APK, Android 15 telefon, hiçbir ağ bağlı değil): uygulama daha önce hiç açılmamışken açıldı, Plus Jakarta Sans ile çizildi ve `google_fonts` hata günlüğü üretmedi; yani yazı tipleri internetten değil APK içindeki dosyalardan yüklendi. Aynı release APK'da 5 dakikalık bir Pomodoro bitince bildirim ("Odaklanma bitti / Mola zamanı.") tam zamanında geldi. Release derlemesi, koddan yalnızca adıyla çağrılan kaynakları sildiği için bildirim simgesi `android/app/src/main/res/raw/keep.xml` ile korunur; `test/android/notification_icon_resource_test.dart` bunu denetler.
 
 **İnternetsiz cihaz doğrulaması** (Android 15 telefon, hiçbir ağ bağlı değil): ders ekleme ve silme (bağlı görevlerle birlikte), görev ekleme ve tamamlama, derse bağlı Pomodoro oturumu kaydı, Pomodoro başlarken bitiş alarmının kurulması, duraklatınca iptal edilmesi, devam edince yeniden kurulması, bitirince iptal edilmesi ve İstatistikler ekranındaki rakamlar sorunsuz çalıştı.
 
@@ -118,7 +136,7 @@ Eklenecek.
 - Bildirim yalnızca Android'de ve yalnızca çalışma aşamasının bitişinde gelir; mola bitişinde bildirim yok. Telefon yeniden başlarsa Pomodoro sayacı ve planlanmış bildirim sıfırlanır.
 - REST katmanı gerçek bir sunucuyla konuşmaz: Dio isteklerini uygulamanın içindeki sahte sunucu (`LocalApiAdapter`) karşılar ve Hive'a yazar, internete hiç çıkılmaz. Ders ve görev yazma işleri (ekle, düzenle, sil, tamamla) bu yoldan gider; listeler Hive'dan okunur, yani GET uygulama akışında kullanılmaz. Çalışma oturumları ve ayarlar REST dışındadır.
 - Bir kayıt arada silinmişken düzenlenmeye ya da silinmeye çalışılırsa sahte sunucu 404 döner, sayfanın üstünde "İşlem başarısız: Kayıt bulunamadı." yazar. Ders silinirken görev silme yarıda hata verirse o ana kadar silinen görevler geri gelmez.
-- Release build (APK/AAB) henüz yapılmadı.
-- Yazı boyutu en uç değerde (2.0×) iken küçük tablet genişliğinde (600 px) Dersler'de yaklaşık 2, İstatistikler'de 10–25 piksel, yatay telefonda Pomodoro halkasında yaklaşık 120 piksel taşma olur. Dikey telefonlarda 2.0×'te de taşma yoktur; 1.6×'e kadar tüm boyutlar temizdir.
+- Release APK tek dosyada üç işlemci mimarisini taşıdığı için büyüktür (yaklaşık 55 MB); `flutter build apk --release --split-per-abi` ile mimariye göre ayrı, daha küçük APK'lar alınabilir. Mağaza paketi (AAB) alınmadı.
+- Yazı boyutu en uç değerde (2.0×) iken yalnızca küçük tablet genişliğinde (600 px) Dersler'de yaklaşık 2 piksel, İstatistikler'de birkaç piksel taşma olur. Telefonlarda (dikey ve yatay) 2.0×'te de, tüm boyutlarda 1.6×'e kadar taşma yoktur.
 - İstatistiklerdeki "bu hafta biten görev" sayısı, tamamlanma tarihi kaydedilmemiş eski görevleri saymaz.
 - İstatistiklerdeki "Derslere göre" bölümü haftalık değil, tüm zamanları toplar.

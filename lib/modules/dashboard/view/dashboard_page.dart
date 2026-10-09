@@ -54,7 +54,7 @@ class _DashboardPageState extends State<DashboardPage> {
           builder: (context, _) {
             final name = _viewModel.name;
             return Text(
-              name.isEmpty ? 'Ana sayfa' : 'Merhaba, $name',
+              name.isEmpty ? 'StudyFlow' : 'Merhaba, $name',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             );

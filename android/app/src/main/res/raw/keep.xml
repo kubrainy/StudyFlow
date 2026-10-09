@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Release derlemesi kullanılmayan kaynakları siler. Bildirim simgesi koddan
+     yalnızca adıyla ("@drawable/ic_stat_studyflow") çağrıldığı için
+     "kullanılmıyor" sayılır; burada korunması istenir. Silinirse bildirimler
+     release sürümünde sessizce hiç gelmez. -->
+<resources
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_studyflow" />
