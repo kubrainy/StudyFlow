@@ -14,7 +14,7 @@ Durum tablosu, proje ilerledikçe güncellenir.
 
 | Modül | Neler yapabilir | Durum |
 |---|---|---|
-| **Dersler** | Listeleme, ekleme, düzenleme, silme, ders detayı, derse bağlı görev ilerlemesi ve çalışılan süre | Tamam |
+| **Dersler** | Listeleme (eklenme sırasıyla), ekleme, düzenleme, silme, ders detayı, derse bağlı görev ilerlemesi ve çalışılan süre | Tamam |
 | **Görevler** | Ekleme, düzenleme, silme, tamamlama, öncelik, son tarih, erteleme, arama ve filtreleme (durum, ders) | Tamam |
 | **Pomodoro** | Başlat / duraklat / devam / sıfırla, çalışma ve mola aşamaları, süre ayarı, derse bağlı ya da serbest çalışma, oturum kaydı | Tamam |
 | **İstatistikler** | Günlük hedef halkası, haftalık çalışma grafiği (Pazartesi–Pazar), derslere göre dağılım, bu hafta biten görevler | Tamam |
@@ -76,6 +76,8 @@ lib/
         └── models/                Sadece bu modülün ekranlarında kullanılan modeller
 ```
 
+Proje kökünde `lib/` dışında şunlar vardır: `test/` ve `integration_test/` (testler), `tool/` (ikon ve ekran görüntüsü üreten araçlar), `google_fonts/` (gömülü yazı tipleri), `screenshots/` (README görüntüleri).
+
 **Model nereye konur?** Tek modülün ekranlarına özel olan model o modülün `models/` klasörüne, `data/` katmanının ya da birden çok modülün kullandığı model `lib/models/` altına gider.
 
 **Bağımlılık enjeksiyonu:** Her modül, kendi bağımlılıklarını kendi `*_module.dart` dosyasında `addLazySingleton` ile kaydeder; sayfalar ViewModel'i `inject<T>()` ile alır.
@@ -129,7 +131,33 @@ Testler `test/` altında, `lib/` ile aynı klasör düzenindedir (`test/modules/
 
 ## Ekran görüntüleri
 
-Eklenecek.
+Görüntüler Android emülatöründe (1080×2400) ve örnek verilerle alındı; "Elif" ve dersler örnektir.
+
+<table>
+  <tr>
+    <td align="center"><img src="screenshots/01_ana_sayfa.png" width="230"><br>Ana sayfa</td>
+    <td align="center"><img src="screenshots/02_dersler.png" width="230"><br>Dersler</td>
+    <td align="center"><img src="screenshots/03_ders_detay.png" width="230"><br>Ders detayı</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="screenshots/04_gorevler.png" width="230"><br>Görevler</td>
+    <td align="center"><img src="screenshots/05_gorev_ekle.png" width="230"><br>Görev ekleme</td>
+    <td align="center"><img src="screenshots/06_pomodoro.png" width="230"><br>Pomodoro (hazır)</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="screenshots/07_pomodoro_calisiyor.png" width="230"><br>Pomodoro (çalışıyor)</td>
+    <td align="center"><img src="screenshots/08_istatistikler.png" width="230"><br>İstatistikler</td>
+    <td align="center"><img src="screenshots/09_ayarlar.png" width="230"><br>Ayarlar</td>
+  </tr>
+</table>
+
+Görüntüleri yeniden almak için bir emülatör ya da cihaz açıkken:
+
+```bash
+flutter drive --driver=tool/screenshots/driver.dart --target=tool/screenshots/screenshots_test.dart -d <cihaz-kimliği>
+```
+
+Test (`tool/screenshots/screenshots_test.dart`) örnek veriyi geçici bir klasöre yazar, cihazdaki gerçek uygulama verisine dokunmaz. Örnek oturumlar "bugünün" 09:00–11:00 saatlerine konur; bu yüzden cihazın saati 11'den sonra olmalıdır (emülatör varsayılan olarak UTC saatiyle açılır, saat dilimi ayarlanmalıdır). Pomodoro adımında bildirim izni penceresi çıkarsa, bu pencere Flutter dışında olduğu için testten kapatılamaz; izin önceden `adb shell pm grant com.kubrainy.studyflow android.permission.POST_NOTIFICATIONS` ile verilebilir. Görüntüler `screenshots/` klasörüne yazılır.
 
 ## Bilinen problemler ve eksikler
 
@@ -140,3 +168,23 @@ Eklenecek.
 - Yazı boyutu en uç değerde (2.0×) iken yalnızca küçük tablet genişliğinde (600 px) Dersler'de yaklaşık 2 piksel, İstatistikler'de birkaç piksel taşma olur. Telefonlarda (dikey ve yatay) 2.0×'te de, tüm boyutlarda 1.6×'e kadar taşma yoktur.
 - İstatistiklerdeki "bu hafta biten görev" sayısı, tamamlanma tarihi kaydedilmemiş eski görevleri saymaz.
 - İstatistiklerdeki "Derslere göre" bölümü haftalık değil, tüm zamanları toplar.
+
+## Başarı kriterleri
+
+Şartnamenin 14. maddesindeki kriterlerin durumu:
+
+| Kriter | Durum | Nerede / nasıl doğrulandı |
+|---|---|---|
+| Temel uygulama akışları çalışmalı | Tamam | Ders → görev → Pomodoro → oturum → istatistik akışı integration testinde ve telefonda doğrulandı |
+| Subject ve Task CRUD tamamlanmalı | Tamam | Dersler ve Görevler modülleri; Repository, ViewModel ve widget testleri |
+| Flutter Modular ile route ve state yönetimi | Tamam | Route ve bağımlılık enjeksiyonu Modular ile (`*_module.dart`, `inject<T>()`). Ekran durumu `ChangeNotifier` ViewModel'lerde tutulur, ViewModel'ler Modular'dan alınır; ayrı bir state paketi kullanılmadı |
+| Local database kullanılmalı | Tamam | Hive: dersler, görevler, çalışma oturumları, ayarlar. Uygulama kapanıp açılınca veriler korunur |
+| REST API entegre edilmeli | Tamam, sahte sunucuyla | Dio katmanında dört HTTP işlemi (GET, POST, PUT, DELETE), JSON, durum kodları, zaman aşımı ve hata sınıfı kodlu ve testli. Karşı taraf gerçek sunucu değil, uygulama içindeki sahte sunucudur; uygulama akışında yalnızca yazma işleri bu yoldan gider (ayrıntı: Bilinen problemler) |
+| Pomodoro çalışmalı | Tamam | Başlat, duraklat, devam, sıfırla, çalışma ve mola, süre ayarı; birim, widget ve integration testleri |
+| Study Session kayıtları tutulmalı | Tamam | Pomodoro bitince ya da erken bitirilince kaydedilir; integration testi ve telefonda doğrulandı |
+| İstatistikler gerçek verilerden oluşturulmalı | Tamam | Günlük, haftalık, derslere göre ve biten görevler kayıtlı oturum ve görevlerden hesaplanır (`StatisticsCalculator` testli) |
+| Bildirimler çalışmalı | Tamam | Çalışma süresi bitince yerel bildirim; imzalı release APK'da telefonda doğrulandı. Yalnızca Android |
+| Unit, Widget ve Integration testleri yazılmalı | Tamam | 860 birim, widget ve layout testi, 1 integration testi; `flutter analyze` temiz |
+| Release build alınabilmeli | Tamam | İmzalı release APK, telefonda temiz kurulumla ve internetsiz doğrulandı. Mağaza paketi (AAB) alınmadı |
+| Git repository düzenli tutulmalı | Tamam | 50'den fazla commit, anlamlı mesajlarla (`git log`) |
+| README dokümantasyonu hazırlanmalı | Tamam | Bu dosya: amaç, özellikler, teknolojiler, mimari, kurulum, testler, ekran görüntüleri, bilinen problemler |
