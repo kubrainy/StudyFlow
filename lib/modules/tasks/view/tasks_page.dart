@@ -62,16 +62,8 @@ class _TasksPageState extends State<TasksPage> {
   }
 
   /// Yazma işlemi başarısız olduysa içeriğin üstüne kırmızı hata satırı koyar.
-  Widget _withActionError(Widget content) {
-    final error = _viewModel.actionError;
-    if (error == null) return content;
-    return Column(
-      children: [
-        AppInlineError(message: error),
-        Expanded(child: content),
-      ],
-    );
-  }
+  Widget _withActionError(Widget content) =>
+      AppWithInlineError(error: _viewModel.actionError, child: content);
 
   @override
   Widget build(BuildContext context) {

@@ -258,6 +258,84 @@ void main() {
     });
   });
 
+  group('kaydırma', () {
+    final today = DateUtils.dateOnly(DateTime.now());
+
+    setUp(() {
+      when(
+        () => tasks.update(
+          any(),
+          title: any(named: 'title'),
+          description: any(named: 'description'),
+          subjectId: any(named: 'subjectId'),
+          priority: any(named: 'priority'),
+          dueDate: any(named: 'dueDate'),
+          clearSubjectId: any(named: 'clearSubjectId'),
+          clearDescription: any(named: 'clearDescription'),
+          clearDueDate: any(named: 'clearDueDate'),
+        ),
+      ).thenAnswer((invocation) async => invocation.positionalArguments.first);
+    });
+
+    Future<void> swipeLeft(WidgetTester tester) async {
+      await tester.drag(find.text('Türev soruları'), const Offset(-500, 0));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('sağa kaydırınca görev tamamlanır', (tester) async {
+      await openPage(tester);
+
+      await tester.drag(find.text('Türev soruları'), const Offset(500, 0));
+      await tester.pumpAndSettle();
+
+      verify(() => tasks.setCompleted(stored.first, true)).called(1);
+    });
+
+    testWidgets('sola kaydırınca erteleme seçenekleri açılır', (tester) async {
+      await openPage(tester);
+
+      await swipeLeft(tester);
+
+      expect(find.text('Ertele'), findsOneWidget);
+      expect(find.text('Yarın'), findsOneWidget);
+      expect(find.text('3 gün sonra'), findsOneWidget);
+      expect(find.text('Haftaya'), findsOneWidget);
+      expect(find.text('Tarih seç'), findsOneWidget);
+    });
+
+    for (final (option, days) in [
+      ('Yarın', 1),
+      ('3 gün sonra', 3),
+      ('Haftaya', 7),
+    ]) {
+      testWidgets(
+        '"$option" son tarihi $days gün sonraya taşır, panel kapanır',
+        (tester) async {
+          await openPage(tester);
+          await swipeLeft(tester);
+
+          await tester.tap(find.text(option));
+          await tester.pumpAndSettle();
+
+          verify(
+            () => tasks.update(
+              stored.first,
+              title: null,
+              description: null,
+              subjectId: null,
+              priority: null,
+              dueDate: DateUtils.addDaysToDate(today, days),
+              clearSubjectId: false,
+              clearDescription: false,
+              clearDueDate: false,
+            ),
+          ).called(1);
+          expect(find.text('Ertele'), findsNothing);
+        },
+      );
+    }
+  });
+
   group('silme', () {
     Future<void> longPressTask(WidgetTester tester) async {
       await tester.longPress(find.text('Türev soruları'));

@@ -18,4 +18,33 @@ void main() {
     );
     expect(text.style?.color, AppColors.danger);
   });
+
+  group('AppWithInlineError', () {
+    Future<void> pump(WidgetTester tester, String? error) => tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AppWithInlineError(error: error, child: const Text('içerik')),
+        ),
+      ),
+    );
+
+    testWidgets('hata yokken yalnızca içerik görünür', (tester) async {
+      await pump(tester, null);
+
+      expect(find.text('içerik'), findsOneWidget);
+      expect(find.byType(AppInlineError), findsNothing);
+    });
+
+    testWidgets('hata varsa içeriğin üstünde hata satırı görünür', (
+      tester,
+    ) async {
+      await pump(tester, 'Kayıt bulunamadı.');
+
+      expect(find.text('içerik'), findsOneWidget);
+      expect(find.text('İşlem başarısız: Kayıt bulunamadı.'), findsOneWidget);
+      final errorY = tester.getTopLeft(find.byType(AppInlineError)).dy;
+      final contentY = tester.getTopLeft(find.text('içerik')).dy;
+      expect(errorY, lessThan(contentY));
+    });
+  });
 }

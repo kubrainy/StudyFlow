@@ -296,3 +296,28 @@ class AppInlineError extends StatelessWidget {
     );
   }
 }
+
+/// [error] doluysa [child]'ın üstüne [AppInlineError] koyar, [child] kalan
+/// yeri doldurur. [error] null ise [child] olduğu gibi gösterilir.
+class AppWithInlineError extends StatelessWidget {
+  const AppWithInlineError({
+    super.key,
+    required this.error,
+    required this.child,
+  });
+
+  final String? error;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final message = error;
+    if (message == null) return child;
+    return Column(
+      children: [
+        AppInlineError(message: message),
+        Expanded(child: child),
+      ],
+    );
+  }
+}

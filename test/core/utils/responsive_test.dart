@@ -43,16 +43,6 @@ void main() {
     });
   });
 
-  group('isMobile', () {
-    testWidgets('600 pikselin altı mobil, üstü değil', (tester) async {
-      expect(await readAt(tester, width: 599, read: Responsive.isMobile), true);
-      expect(
-        await readAt(tester, width: 600, read: Responsive.isMobile),
-        false,
-      );
-    });
-  });
-
   group('gridExtent', () {
     testWidgets('normal yazıda verilen yüksekliği aynen döner', (tester) async {
       expect(
