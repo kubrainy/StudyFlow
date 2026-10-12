@@ -128,7 +128,7 @@ Testler `test/` altında, `lib/` ile aynı klasör düzenindedir (`test/modules/
 
 ## Ekran görüntüleri
 
-Görüntüler bilgisayarda telefon boyutunda (390×844, 2×) ve örnek verilerle üretildi; "Elif" ve dersler örnektir. Başlıktaki 👋 emojisi bu ortamda çizilemediği için yer tutucu olarak görünür, telefonda doğru görünür. Analiz görüntüsü bugün haftanın başı olduğu için Aylık görünümdedir.
+Görüntüler örnek verilerle alındı; "Elif" ve dersler örnektir.
 
 <table>
   <tr>
@@ -148,47 +148,4 @@ Görüntüler bilgisayarda telefon boyutunda (390×844, 2×) ve örnek verilerle
   </tr>
 </table>
 
-Görüntüleri yeniden almak için (cihaz gerekmez, ~1,5 dk sürer; Pomodoro süresi gerçek saatle ölçüldüğü için bekler):
-
-```bash
-flutter test tool/screenshots/golden_screenshots_test.dart --update-goldens
-```
-
-Bir emülatör ya da cihaz açıkken gerçek ekrandan almak için:
-
-```bash
-flutter drive --driver=tool/screenshots/driver.dart --target=tool/screenshots/screenshots_test.dart -d <cihaz-kimliği>
-```
-
-İki araç da (`golden_screenshots_test.dart` ve `screenshots_test.dart`) aynı örnek veriyi (`tool/screenshots/seed.dart`) kullanır. Cihaz testi örnek veriyi geçici bir klasöre yazar, cihazdaki gerçek uygulama verisine dokunmaz. Örnek oturumlar "bugünün" 09:00–11:00 saatlerine konur; bu yüzden cihazın saati 11'den sonra olmalıdır (emülatör varsayılan olarak UTC saatiyle açılır, saat dilimi ayarlanmalıdır). Pomodoro adımında bildirim izni penceresi çıkarsa, bu pencere Flutter dışında olduğu için testten kapatılamaz; izin önceden `adb shell pm grant com.kubrainy.studyflow android.permission.POST_NOTIFICATIONS` ile verilebilir. Görüntüler `screenshots/` klasörüne yazılır.
-
-## Bilinen problemler ve eksikler
-
-- Bildirim yalnızca Android'de ve yalnızca çalışma aşamasının bitişinde gelir; mola bitişinde bildirim yok. Telefon yeniden başlarsa Pomodoro sayacı ve planlanmış bildirim sıfırlanır.
-- REST katmanı gerçek bir sunucuyla konuşmaz: Dio isteklerini uygulamanın içindeki sahte sunucu (`LocalApiAdapter`) karşılar ve Hive'a yazar, internete hiç çıkılmaz. Ders ve görev yazma işleri (ekle, düzenle, sil, tamamla) bu yoldan gider; listeler Hive'dan okunur, yani GET uygulama akışında kullanılmaz. Çalışma oturumları ve ayarlar REST dışındadır.
-- Bir kayıt arada silinmişken düzenlenmeye ya da silinmeye çalışılırsa sahte sunucu 404 döner, sayfanın üstünde "İşlem başarısız: Kayıt bulunamadı." yazar. Ders silinirken görev silme yarıda hata verirse o ana kadar silinen görevler geri gelmez.
-- Release APK tek dosyada üç işlemci mimarisini taşıdığı için büyüktür (yaklaşık 55 MB); `flutter build apk --release --split-per-abi` ile mimariye göre ayrı, daha küçük APK'lar alınabilir. Mağaza paketi (AAB) alınmadı.
-- Yazı boyutu en uç değerde (2.0×) iken yalnızca küçük tablet genişliğinde (600 px) Dersler'de yaklaşık 2 piksel, İstatistikler'de birkaç piksel taşma olur. Telefonlarda (dikey ve yatay) 2.0×'te de, tüm boyutlarda 1.6×'e kadar taşma yoktur.
-- İstatistiklerdeki "bu hafta biten görev" sayısı, tamamlanma tarihi kaydedilmemiş eski görevleri saymaz.
-- Tasarımdaki profil fotoğrafı, sunucu eşitleme, arka plan sesi, çevrimdışı mod anahtarı, günlük hatırlatıcı ve mola sonu titreşimi yapılmadı. Rozetler (İstikrar Ustası, Hedef Avcısı, Görev Canavarı) ve "Verimlilik analizi" gerçek verilerden hesaplanır. Ders kartındaki ilerleme çubuğu "haftalık hedef" değil görev ilerlemesidir (derslerin kod, hoca ve haftalık hedef alanı yok).
-- Ders ve profil için fotoğraf yoktur; avatar isim baş harfidir.
-
-## Başarı kriterleri
-
-Şartnamenin 14. maddesindeki kriterlerin durumu:
-
-| Kriter | Durum | Nerede / nasıl doğrulandı |
-|---|---|---|
-| Temel uygulama akışları çalışmalı | Tamam | Ders → görev → Pomodoro → oturum → istatistik akışı integration testinde ve telefonda doğrulandı |
-| Subject ve Task CRUD tamamlanmalı | Tamam | Dersler ve Görevler modülleri; Repository, ViewModel ve widget testleri |
-| Flutter Modular ile route ve state yönetimi | Tamam | Route ve bağımlılık enjeksiyonu Modular ile (`*_module.dart`, `inject<T>()`). Ekran durumu `ChangeNotifier` ViewModel'lerde tutulur, ViewModel'ler Modular'dan alınır; ayrı bir state paketi kullanılmadı |
-| Local database kullanılmalı | Tamam | Hive: dersler, görevler, çalışma oturumları, ayarlar. Uygulama kapanıp açılınca veriler korunur |
-| REST API entegre edilmeli | Tamam, sahte sunucuyla | Dio katmanında dört HTTP işlemi (GET, POST, PUT, DELETE), JSON, durum kodları, zaman aşımı ve hata sınıfı kodlu ve testli. Karşı taraf gerçek sunucu değil, uygulama içindeki sahte sunucudur; uygulama akışında yalnızca yazma işleri bu yoldan gider (ayrıntı: Bilinen problemler) |
-| Pomodoro çalışmalı | Tamam | Başlat, duraklat, devam, sıfırla, çalışma ve mola, süre ayarı; birim, widget ve integration testleri |
-| Study Session kayıtları tutulmalı | Tamam | Pomodoro bitince ya da erken bitirilince kaydedilir; integration testi ve telefonda doğrulandı |
-| İstatistikler gerçek verilerden oluşturulmalı | Tamam | Günlük, haftalık, derslere göre ve biten görevler kayıtlı oturum ve görevlerden hesaplanır (`StatisticsCalculator` testli) |
-| Bildirimler çalışmalı | Tamam | Çalışma süresi bitince yerel bildirim; imzalı release APK'da telefonda doğrulandı. Yalnızca Android |
-| Unit, Widget ve Integration testleri yazılmalı | Tamam | 860 birim, widget ve layout testi, 1 integration testi; `flutter analyze` temiz |
-| Release build alınabilmeli | Tamam | İmzalı release APK, telefonda temiz kurulumla ve internetsiz doğrulandı. Mağaza paketi (AAB) alınmadı |
-| Git repository düzenli tutulmalı | Tamam | 50'den fazla commit, anlamlı mesajlarla (`git log`) |
-| README dokümantasyonu hazırlanmalı | Tamam | Bu dosya: amaç, özellikler, teknolojiler, mimari, kurulum, testler, ekran görüntüleri, bilinen problemler |
+Görüntüler `tool/screenshots/` araçlarıyla üretildi.
