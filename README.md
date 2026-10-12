@@ -104,7 +104,7 @@ APK `build/app/outputs/flutter-apk/app-release.apk` yoluna çıkar. Release imza
 
 ### Uygulama ikonu
 
-İkon, tasarımdaki görselden (kitap, kum saati ve sonsuzluk işareti) üretilen PNG'lerdir: normal, uyarlanabilir (beyaz zemin + ön plan), Android 13 tek renkli tema ikonu ve bildirim simgesi `android/app/src/main/res/` altındadır. Açılış ekranının zemini beyazdır. Üst çubuktaki logo `assets/images/studyflow_logo.png` dosyasıdır. (`tool/icon/` altındaki eski, koddan çizen halka-ve-tik üreticisi artık kullanılmıyor.)
+Android ikonları `android/app/src/main/res/` altındadır, uygulama içindeki logo `assets/images/studyflow_logo.png` dosyasıdır.
 
 ## Testler
 
@@ -114,17 +114,11 @@ flutter test        # birim ve widget testleri
 flutter test integration_test/app_flow_test.dart -d windows   # tam akış (~1 dk)
 ```
 
-Testler `test/` altında, `lib/` ile aynı klasör düzenindedir (`test/modules/<modül>/view_model`, `view`, `view/widgets`). Repository'ler `mocktail` ile taklit edilir; böylece ViewModel testleri gerçek veritabanına ihtiyaç duymaz.
+Testler `test/` altında, `lib/` ile aynı klasör düzenindedir. Repository'ler `mocktail` ile taklit edilir, ViewModel testleri gerçek veritabanına ihtiyaç duymaz.
 
-Şu an kapsananlar: Repository'ler (hem taklit kaynaklarla hem gerçek Dio zinciriyle), Dio katmanı ve yerel adaptör, ViewModel'ler, bildirim servisi, istatistik hesapları, ortak bileşenler ve modüllerin widget'ları.
-
-**Layout testi** (`test/layout/screen_sizes_test.dart`): tüm sayfaları, alt panelleri (klavye açıkken de) ve alt menüyü 7 ekran boyutunda (küçük telefondan yatay tablete) ve 3 yazı ölçeğinde (normal, 1.3×, 1.6×) çizer; taşma ya da kesilen etiket varsa düşer. Boş ve hata durumları da dahildir. Testlerde yazılar varsayılan olarak gerçeğinden iki kat geniş çizildiği için test, projeye gömülü gerçek yazı tiplerini (`google_fonts/`) yükleyip onlarla ölçer.
-
-**Integration testi** (`integration_test/app_flow_test.dart`): uygulamayı gerçek Hive ile (geçici klasörde) açıp ders oluşturur, ona bağlı görev oluşturup tamamlar, o derse bağlı Pomodoro'yu 1 dakikadan fazla çalıştırıp erken bitirir, oturum kaydını (ders ve süre) ve İstatistikler ile ders kartındaki güncellemeyi kontrol eder. Pomodoro gerçek saatle çalıştığı için test yaklaşık 1 dakika sürer. Masaüstü penceresi ekranda görünür olmalıdır; pencere gizliyken test kare bekleyip zaman aşımına uğrayabilir.
-
-**Temiz kurulum doğrulaması** (imzalı release APK, Android 15 telefon, hiçbir ağ bağlı değil): uygulama daha önce hiç açılmamışken açıldı, Plus Jakarta Sans ile çizildi ve `google_fonts` hata günlüğü üretmedi; yani yazı tipleri internetten değil APK içindeki dosyalardan yüklendi. Aynı release APK'da 5 dakikalık bir Pomodoro bitince bildirim ("Odaklanma bitti / Mola zamanı.") tam zamanında geldi. Release derlemesi, koddan yalnızca adıyla çağrılan kaynakları sildiği için bildirim simgesi `android/app/src/main/res/raw/keep.xml` ile korunur; `test/android/notification_icon_resource_test.dart` bunu denetler.
-
-**İnternetsiz cihaz doğrulaması** (Android 15 telefon, hiçbir ağ bağlı değil): ders ekleme ve silme (bağlı görevlerle birlikte), görev ekleme ve tamamlama, derse bağlı Pomodoro oturumu kaydı, Pomodoro başlarken bitiş alarmının kurulması, duraklatınca iptal edilmesi, devam edince yeniden kurulması, bitirince iptal edilmesi ve İstatistikler ekranındaki rakamlar sorunsuz çalıştı.
+- **Layout testi** (`test/layout/screen_sizes_test.dart`): sayfaları ve alt menüyü 7 ekran boyutunda ve 3 yazı ölçeğinde (normal, 1.3×, 1.6×) çizer; taşma ya da kesilen etiket varsa düşer.
+- **Integration testi** (`integration_test/app_flow_test.dart`): gerçek Hive ile ders → görev → Pomodoro → oturum kaydı → istatistik akışını uçtan uca dener (~1 dk, masaüstü penceresi görünür olmalı).
+- **İnternetsiz cihaz doğrulaması** (Android 15 telefon, hiçbir ağ bağlı değil): ders ekleme ve silme (bağlı görevlerle birlikte), görev ekleme ve tamamlama, derse bağlı Pomodoro oturumu kaydı, Pomodoro başlarken bitiş alarmının kurulması, duraklatınca iptal edilmesi, devam edince yeniden kurulması, bitirince iptal edilmesi ve İstatistikler ekranındaki rakamlar sorunsuz çalıştı.
 
 ## Ekran görüntüleri
 
