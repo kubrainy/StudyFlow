@@ -12,12 +12,16 @@ class GoalRing extends StatelessWidget {
     required this.value,
     required this.caption,
     this.size = 112,
+    this.valueStyle,
+    this.captionStyle,
   });
 
   final double progress;
   final String value;
   final String caption;
   final double size;
+  final TextStyle? valueStyle;
+  final TextStyle? captionStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -34,17 +38,30 @@ class GoalRing extends StatelessWidget {
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                value,
-                style: AppTextStyles.headlineLg.copyWith(
-                  color: AppColors.textPrimary,
+              // Halkanın içine sığmazsa yazı küçülür.
+              SizedBox(
+                width: size - 36,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    style:
+                        valueStyle ??
+                        AppTextStyles.headlineLg.copyWith(
+                          color: AppColors.textPrimary,
+                        ),
+                  ),
                 ),
               ),
               Text(
                 caption,
-                style: AppTextStyles.bodySm.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+                maxLines: 1,
+                style:
+                    captionStyle ??
+                    AppTextStyles.bodySm.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
               ),
             ],
           ),
@@ -75,9 +92,13 @@ class _RingPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = _stroke
       ..strokeCap = StrokeCap.round
-      ..shader = const SweepGradient(
+      // Renk geçişi yalnızca dolu yay boyunca uzanır; yayın başı teal, sonu
+      // indigo olur (tam turda başlangıç ucu da indigoya dönmesin).
+      ..shader = SweepGradient(
+        startAngle: 0,
+        endAngle: 2 * math.pi * progress,
         colors: AppColors.timerGradient,
-        transform: GradientRotation(-math.pi / 2),
+        transform: const GradientRotation(-math.pi / 2),
       ).createShader(rect);
     canvas.drawArc(rect, -math.pi / 2, 2 * math.pi * progress, false, arc);
   }

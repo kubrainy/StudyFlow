@@ -7,8 +7,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/responsive.dart';
-import '../../../core/widgets/duration_stepper.dart';
+import '../../../core/widgets/app_top_bar.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../view_model/pomodoro_view_model.dart';
+import 'widgets/pomodoro_cards.dart';
 import 'widgets/pomodoro_controls.dart';
 import 'widgets/pomodoro_ring.dart';
 import 'widgets/pomodoro_sizes.dart';
@@ -70,115 +72,138 @@ class _PomodoroPageState extends State<PomodoroPage> {
   String _ringLabel(PomodoroViewModel c) {
     if (c.status == PomodoroStatus.idle) return 'Hazır';
     if (c.status == PomodoroStatus.paused) return 'Duraklatıldı';
-    return c.phase == PomodoroPhase.work ? 'Odaklan' : 'Mola';
+    return switch (c.phase) {
+      PomodoroPhase.work => 'Odak Modu Aktif',
+      PomodoroPhase.rest => 'Mola Zamanı',
+      PomodoroPhase.longRest => 'Uzun Mola',
+    };
   }
 
-  /// Halka, ekranda kalan yüksekliğe göre [PomodoroSizes.ringMin] ile
-  /// [PomodoroSizes.ringMax] arasında büyür; genişliği de aşmaz.
-  double _ringSize({required double height, required double width}) {
-    final byHeight = (height - PomodoroSizes.fixedContentHeight)
-        .clamp(PomodoroSizes.ringMin, PomodoroSizes.ringMax)
-        .toDouble();
-    return math.min(byHeight, width);
-  }
+  /// Halka çapı genişliğe göre [PomodoroSizes.ringMin] ile
+  /// [PomodoroSizes.ringMax] arasında kalır.
+  double _ringSize(double available) => math
+      .min(available, PomodoroSizes.ringMax)
+      .clamp(math.min(available, PomodoroSizes.ringMin), PomodoroSizes.ringMax);
 
   @override
   Widget build(BuildContext context) {
     final width = Responsive.widthOf(context);
     final padding = AppSpacing.pagePadding(width);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Pomodoro')),
+    return MainPageScaffold(
       body: ListenableBuilder(
         listenable: _viewModel,
         builder: (context, _) {
           final c = _viewModel;
           final id = c.subjectId;
-          final subjectName = id == null ? null : _viewModel.findSubject(id)?.name;
+          final subjectName = id == null ? null : c.findSubject(id)?.name;
 
-          return LayoutBuilder(
-            builder: (context, box) => SingleChildScrollView(
-              padding: padding,
+          // Oturum sayıları her saniye okunur; bir kez alıp yeniden kullanılır.
+          final every = c.longBreakEvery;
+          final sessionCount = c.todaySessionCount;
+          final doneInCycle = sessionCount % every;
+          final inWork = c.phase == PomodoroPhase.work;
+          // Molada az önce biten oturum gösterilir (4. oturumdan sonra 4 / 4).
+          final shown = inWork
+              ? doneInCycle + 1
+              : (sessionCount == 0
+                    ? 0
+                    : (doneInCycle == 0 ? every : doneInCycle));
+          final dots = [
+            for (var i = 1; i <= every; i++)
+              if (inWork)
+                i <= doneInCycle
+                    ? PomodoroDot.done
+                    : (i == shown ? PomodoroDot.current : PomodoroDot.todo)
+              else
+                i <= shown ? PomodoroDot.done : PomodoroDot.todo,
+          ];
+          final streak = c.streakDays;
+
+          return SingleChildScrollView(
+            padding: padding,
+            child: Center(
               child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: box.maxHeight - padding.vertical,
-                ),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 480),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
                       children: [
-                        PomodoroPhaseTabs(
-                          phase: c.phase,
-                          onChanged: c.switchPhase,
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        Center(
-                          child: PomodoroRing(
-                            size: _ringSize(
-                              height: box.maxHeight,
-                              width: box.maxWidth - padding.horizontal,
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: PomodoroSubjectField(
+                              subjectName: subjectName,
+                              locked: c.status != PomodoroStatus.idle,
+                              onTap: _pickSubject,
                             ),
-                            progress: c.progress,
-                            timeText: _format(c.remaining),
-                            label: _ringLabel(c),
-                            isRest: c.phase == PomodoroPhase.rest,
-                            footer: c.status == PomodoroStatus.idle
-                                ? DurationStepper(
-                                    label: c.phase == PomodoroPhase.work
-                                        ? 'Odaklanma süresi'
-                                        : 'Mola süresi',
-                                    value: c.totalDuration.inMinutes,
-                                    min: c.durationRange.min,
-                                    max: c.durationRange.max,
-                                    step: c.durationRange.step,
-                                    onChanged: c.setDuration,
-                                  )
-                                : null,
                           ),
                         ),
-                        const SizedBox(height: AppSpacing.lg),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: PomodoroSubjectField(
-                                subjectName: subjectName,
-                                locked: c.status != PomodoroStatus.idle,
-                                onTap: _pickSubject,
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            PomodoroCircleButton(
-                              status: c.status,
-                              phase: c.phase,
-                              onStart: c.start,
-                              onPause: c.pause,
-                              onResume: c.resume,
-                            ),
-                            if (c.status != PomodoroStatus.idle) ...[
-                              const SizedBox(width: AppSpacing.sm),
-                              PomodoroStopButton(
-                                phase: c.phase,
-                                onFinish: _finish,
-                                onSkip: c.reset,
-                              ),
-                            ],
-                          ],
-                        ),
-                        if (c.errorMessage != null) ...[
-                          const SizedBox(height: AppSpacing.sm),
-                          Text(
-                            c.errorMessage!,
-                            style: AppTextStyles.bodySm.copyWith(
-                              color: AppColors.danger,
-                            ),
+                        if (streak > 0) ...[
+                          const SizedBox(width: AppSpacing.xs),
+                          AppBadge(
+                            key: const Key('pomodoro-streak'),
+                            label: 'SERİ #$streak',
+                            fill: AppColors.mint,
+                            color: AppColors.mintText,
+                            icon: Icons.bolt,
                           ),
                         ],
                       ],
                     ),
-                  ),
+                    const SizedBox(height: AppSpacing.md),
+                    PomodoroPhaseTabs(
+                      phase: c.phase,
+                      minutesOf: c.minutesOf,
+                      onChanged: c.switchPhase,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Center(
+                      child: PomodoroRing(
+                        size: _ringSize(width - padding.horizontal),
+                        progress: c.progress,
+                        timeText: _format(c.remaining),
+                        label: _ringLabel(c),
+                        sessionText: 'Oturum $shown / $every',
+                        dots: dots,
+                        isRest: !inWork,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    PomodoroControls(
+                      status: c.status,
+                      phase: c.phase,
+                      onStart: c.start,
+                      onPause: c.pause,
+                      onResume: c.resume,
+                      onReset: c.reset,
+                      onFinish: _finish,
+                      onSkip: c.reset,
+                    ),
+                    if (c.errorMessage != null) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        c.errorMessage!,
+                        style: AppTextStyles.bodySm.copyWith(
+                          color: AppColors.danger,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: AppSpacing.lg),
+                    PomodoroReminderCard(
+                      enabled: c.notificationsEnabled,
+                      onChanged: c.setNotificationsEnabled,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    PomodoroDayCard(
+                      sessionCount: sessionCount,
+                      todayMinutes: c.todayTotalMinutes,
+                      goalMinutes: c.dailyGoalMinutes,
+                      onTap: () => context.navigate('/statistics'),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
                 ),
               ),
             ),

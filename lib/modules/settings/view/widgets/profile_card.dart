@@ -4,10 +4,12 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/format_minutes.dart';
-import '../../../../core/utils/upper_tr.dart';
+import '../../../../core/widgets/app_top_bar.dart';
 import '../../../../core/widgets/app_widgets.dart';
 import '../../models/profile_stats.dart';
 
+/// Ayarlar'ın üstündeki profil kartı: baş harf avatarı, ad (kalemle
+/// düzenlenir) ve üç rakam (toplam çalışma, biten görev, ders).
 class ProfileCard extends StatelessWidget {
   const ProfileCard({
     super.key,
@@ -30,7 +32,7 @@ class ProfileCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              _Avatar(name: name),
+              AppAvatar(name: name, radius: 30),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Text(
@@ -38,6 +40,7 @@ class ProfileCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.titleMd.copyWith(
+                    fontWeight: FontWeight.w800,
                     color: hasName
                         ? AppColors.textPrimary
                         : AppColors.textSecondary,
@@ -52,54 +55,38 @@ class ProfileCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
-          const Divider(height: 1, color: AppColors.border),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              Expanded(
-                child: _Stat(
-                  value: formatMinutes(stats.totalStudyMinutes),
-                  caption: 'toplam çalışma',
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              vertical: AppSpacing.sm,
+              horizontal: AppSpacing.xs,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceSubdued,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _Stat(
+                    value: formatHm(stats.totalStudyMinutes),
+                    caption: 'toplam çalışma',
+                  ),
                 ),
-              ),
-              Expanded(
-                child: _Stat(
-                  value: '${stats.completedTaskCount}',
-                  caption: 'biten görev',
+                Expanded(
+                  child: _Stat(
+                    value: '${stats.completedTaskCount}',
+                    caption: 'biten görev',
+                  ),
                 ),
-              ),
-              Expanded(
-                child: _Stat(value: '${stats.subjectCount}', caption: 'ders'),
-              ),
-            ],
+                Expanded(
+                  child: _Stat(value: '${stats.subjectCount}', caption: 'ders'),
+                ),
+              ],
+            ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _Avatar extends StatelessWidget {
-  const _Avatar({required this.name});
-
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    final trimmed = name.trim();
-    final initial = trimmed.isEmpty ? '' : upperTr(trimmed.characters.first);
-
-    return CircleAvatar(
-      key: const Key('profile-avatar'),
-      radius: 24,
-      backgroundColor: AppColors.focusFill,
-      child: trimmed.isEmpty
-          ? const Icon(Icons.person_outline, color: AppColors.primary)
-          : Text(
-              initial,
-              style: AppTextStyles.titleMd.copyWith(color: AppColors.primary),
-            ),
     );
   }
 }
@@ -114,14 +101,15 @@ class _Stat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // "12 sa 40 dk" dar ekranda sığmazsa küçülür.
+        // "128s 40dk" dar ekranda sığmazsa küçülür.
         FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
             value,
             maxLines: 1,
             style: AppTextStyles.statMono.copyWith(
-              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w800,
+              color: AppColors.primary,
             ),
           ),
         ),

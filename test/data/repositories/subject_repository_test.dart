@@ -71,7 +71,8 @@ void main() {
         totalStudyMinutes: 0,
       );
       // Hive'ın verdiği sıra: kimliğe göre.
-      when(() => local.getAll()).thenReturn(List.unmodifiable([second, first, sameDay]));
+      when(() => local.getAll())
+          .thenReturn(List.unmodifiable([second, first, sameDay]));
 
       final result = repository.getAll();
 

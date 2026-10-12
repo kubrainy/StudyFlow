@@ -14,12 +14,12 @@ Durum tablosu, proje ilerledikçe güncellenir.
 
 | Modül | Neler yapabilir | Durum |
 |---|---|---|
-| **Dersler** | Listeleme (eklenme sırasıyla), ekleme, düzenleme, silme, ders detayı, derse bağlı görev ilerlemesi ve çalışılan süre | Tamam |
-| **Görevler** | Ekleme, düzenleme, silme, tamamlama, öncelik, son tarih, erteleme, arama ve filtreleme (durum, ders) | Tamam |
-| **Pomodoro** | Başlat / duraklat / devam / sıfırla, çalışma ve mola aşamaları, süre ayarı, derse bağlı ya da serbest çalışma, oturum kaydı | Tamam |
-| **İstatistikler** | Günlük hedef halkası, haftalık çalışma grafiği (Pazartesi–Pazar), derslere göre dağılım, bu hafta biten görevler | Tamam |
-| **Ayarlar** | Profil kartı (isim, toplam çalışma, biten görev, ders sayısı), günlük hedef, Pomodoro ve mola süresi, bildirim anahtarı | Tamam |
-| **Ana sayfa (Dashboard)** | Günlük hedef halkası, bugün biten görevler, son çalışmalar zaman çizgisi, "Merhaba, isim" | Tamam |
+| **Dersler** | Listeleme (eklenme sırasıyla), ekleme, düzenleme, silme (kart menüsü ya da uzun basma), arama ve filtre çipleri, ders detayı, derse bağlı görev ilerlemesi, toplam süre, "Hemen Çalış" kısayolu, "Genel Performans" kartı | Tamam |
+| **Görevler** | Ekleme, düzenleme, silme, tamamlama, öncelik, son tarih, erteleme, arama ve filtreleme (durum, ders). Alt menüde değil; Özet'teki "Tümü" bağlantısıyla açılır | Tamam |
+| **Pomodoro** | Başlat / duraklat / devam / sıfırla / bitir, Odaklan – Kısa Mola – Uzun Mola aşamaları (uzun mola her N oturumda bir kendiliğinden gelir), "Oturum 3 / 4" göstergesi, seri rozeti, derse bağlı ya da serbest çalışma, oturum kaydı, bildirim anahtarı, bugünkü oturum özeti | Tamam |
+| **Analiz** | Günlük / Haftalık / Aylık / Tüm Zamanlar aralığı; toplam çalışma, Pomodoro sayısı, görev başarısı ve günlük ortalama kartları (önceki dönemle karşılaştırmalı); dokunulabilir sütun grafiği ve hedef çizgisi; derslere göre halka grafik ve süre çubukları; en verimli saat aralığı; gerçek verilerden hesaplanan rozetler | Tamam |
+| **Ayarlar** | Profil kartı (isim, toplam çalışma, biten görev, ders sayısı), günlük hedef, çalışma / kısa mola / uzun mola süresi ve uzun mola aralığı, bildirim anahtarı, verileri JSON olarak panoya yedekleme, uygulama bilgisi | Tamam |
+| **Özet (Dashboard)** | "Merhaba, isim", günlük ilerleme halkası (seri, görevler, Pomodoro), "Kaldığın yerden devam et" kartı, bugünün görevleri (buradan tamamlanır), son aktiviteler | Tamam |
 | **Bildirimler** | Çalışma süresi bitince yerel bildirim: Pomodoro başlarken önceden planlanır, uygulama arkadayken ve ekran kilitliyken de gelir. İzin ilk Pomodoro'da istenir, Ayarlar'daki anahtarla kapatılır | Tamam |
 
 ## Kullanılan teknolojiler
@@ -47,6 +47,7 @@ View  →  ViewModel  →  Repository  →  Hive (yerel veritabanı)
 - **View:** sadece çizer ve kullanıcı dokunuşunu ViewModel'e iletir. Hesap, veri okuma ya da kayıt yapmaz.
 - **ViewModel:** `ChangeNotifier`. Ekranın durumunu (`loading`, `empty`, `error`, `success`) ve hazır sonuçlarını tutar, değişince ekrana haber verir. Yalnızca Repository'leri bilir; `BuildContext` ya da widget içermez.
 - **Repository:** ViewModel ile veritabanı arasındaki tek kapıdır. Hive'a doğrudan o dokunur.
+- **Hive kutuları** `main.dart`'ta değil modüllerde açılır: her modül sayfasını `HiveBoxesGate` ile sarar ve kendi kutularını listeler (`<modül>_module.dart`). Kutu zaten açıksa beklemez; açık kutular kapatılmaz, çünkü aynı kutuyu birkaç modül kullanır. `main.dart` yalnızca Hive'ın klasörünü hazırlar.
 - **Saf hesaplar** (örneğin istatistik hesapları) ayrı bir sınıfta tutulur, ekrandan ve veritabanından bağımsız test edilir.
 
 ### Klasör yapısı
@@ -55,7 +56,7 @@ View  →  ViewModel  →  Repository  →  Hive (yerel veritabanı)
 lib/
 ├── main.dart, app_widget.dart     Uygulama girişi
 ├── app_module.dart                Ana modül, alt modülleri bağlar
-├── app_shell.dart                 Alt menü ve sayfa alanı
+├── app_shell.dart                 Alt menü (ortada yuvarlak Pomodoro düğmesi) ve sayfa alanı; üst çubuk her ana sekmede `MainTopBar` ile gelir
 ├── core/                          Ortak parçalar
 │   ├── constants/                 Sabitler (Hive kutu adları)
 │   ├── network/                   Dio ayarı, hata sınıfı
@@ -76,7 +77,7 @@ lib/
         └── models/                Sadece bu modülün ekranlarında kullanılan modeller
 ```
 
-Proje kökünde `lib/` dışında şunlar vardır: `test/` ve `integration_test/` (testler), `tool/` (ikon ve ekran görüntüsü üreten araçlar), `google_fonts/` (gömülü yazı tipleri), `screenshots/` (README görüntüleri).
+Proje kökünde `lib/` dışında şunlar vardır: `test/` ve `integration_test/` (testler; entegrasyon testi Flutter kuralı gereği `test/` içine değil kökte durur), `tool/` (ikon ve ekran görüntüsü üreten araçlar), `google_fonts/` (gömülü yazı tipleri), `screenshots/` (README görüntüleri).
 
 **Model nereye konur?** Tek modülün ekranlarına özel olan model o modülün `models/` klasörüne, `data/` katmanının ya da birden çok modülün kullandığı model `lib/models/` altına gider.
 
@@ -103,11 +104,7 @@ APK `build/app/outputs/flutter-apk/app-release.apk` yoluna çıkar. Release imza
 
 ### Uygulama ikonu
 
-İkon koddan çizilir ve Android klasörlerine PNG olarak yazılır (normal, uyarlanabilir, Android 13 tek renkli tema ikonu ve bildirim simgesi). Çizim `tool/icon/app_icon_painter.dart` içindedir; yeniden üretmek için:
-
-```bash
-ICON_MODE=install ICON_DESIGN=halkaKitapYigini flutter test tool/icon/generate_icons_test.dart
-```
+İkon, tasarımdaki görselden (kitap, kum saati ve sonsuzluk işareti) üretilen PNG'lerdir: normal, uyarlanabilir (beyaz zemin + ön plan), Android 13 tek renkli tema ikonu ve bildirim simgesi `android/app/src/main/res/` altındadır. Açılış ekranının zemini beyazdır. Üst çubuktaki logo `assets/images/studyflow_logo.png` dosyasıdır. (`tool/icon/` altındaki eski, koddan çizen halka-ve-tik üreticisi artık kullanılmıyor.)
 
 ## Testler
 
@@ -167,7 +164,9 @@ Test (`tool/screenshots/screenshots_test.dart`) örnek veriyi geçici bir klasö
 - Release APK tek dosyada üç işlemci mimarisini taşıdığı için büyüktür (yaklaşık 55 MB); `flutter build apk --release --split-per-abi` ile mimariye göre ayrı, daha küçük APK'lar alınabilir. Mağaza paketi (AAB) alınmadı.
 - Yazı boyutu en uç değerde (2.0×) iken yalnızca küçük tablet genişliğinde (600 px) Dersler'de yaklaşık 2 piksel, İstatistikler'de birkaç piksel taşma olur. Telefonlarda (dikey ve yatay) 2.0×'te de, tüm boyutlarda 1.6×'e kadar taşma yoktur.
 - İstatistiklerdeki "bu hafta biten görev" sayısı, tamamlanma tarihi kaydedilmemiş eski görevleri saymaz.
-- İstatistiklerdeki "Derslere göre" bölümü haftalık değil, tüm zamanları toplar.
+- Tasarımdaki profil fotoğrafı, sunucu eşitleme, arka plan sesi, çevrimdışı mod anahtarı, günlük hatırlatıcı ve mola sonu titreşimi yapılmadı. Rozetler (İstikrar Ustası, Hedef Avcısı, Görev Canavarı) ve "Verimlilik analizi" gerçek verilerden hesaplanır. Ders kartındaki ilerleme çubuğu "haftalık hedef" değil görev ilerlemesidir (derslerin kod, hoca ve haftalık hedef alanı yok).
+- Ders ve profil için fotoğraf yoktur; avatar isim baş harfidir.
+- "Ekran görüntüleri" bölümündeki resimler eski tasarıma aittir; yeni tasarımla yeniden alınmalıdır.
 
 ## Başarı kriterleri
 

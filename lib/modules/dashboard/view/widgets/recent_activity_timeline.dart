@@ -2,73 +2,92 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_shadows.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/subject_style.dart';
 import '../../../../core/utils/day_label.dart';
 import '../../../../core/utils/format_minutes.dart';
-import '../../../../core/utils/upper_tr.dart';
 import '../../../../core/widgets/app_widgets.dart';
 import '../../models/activity_day.dart';
 import '../../models/recent_activity.dart';
 
-/// Son çalışmalar: güne göre gruplu, solunda dikey çizgi ve ders renginde
-/// noktalar olan zaman çizgisi. [now] gün başlıklarındaki "Bugün" ve "Dün" için.
-class RecentActivityTimeline extends StatelessWidget {
-  const RecentActivityTimeline({
+/// "Son Aktiviteler": son çalışma oturumları, ders renginde ikon kutusuyla.
+/// [now] "Bugün" / "Dün" etiketleri için.
+class RecentActivityList extends StatelessWidget {
+  const RecentActivityList({
     super.key,
     required this.days,
     required this.now,
+    this.onTap,
   });
 
   final List<ActivityDay> days;
   final DateTime now;
 
+  /// Satıra dokununca; ders id'si serbest çalışmada null.
+  final ValueChanged<String?>? onTap;
+
+  static const maxVisible = 3;
+
   @override
   Widget build(BuildContext context) {
-    if (days.isEmpty) {
-      return AppCard(
-        child: Text(
-          'Henüz çalışma yok. Pomodoro ile ilk oturumunu başlat.',
-          style: AppTextStyles.bodyMd.copyWith(color: AppColors.textSecondary),
-        ),
-      );
+    final activities = [for (final day in days) ...day.activities]
+        .take(maxVisible)
+        .toList();
+
+    // "Bugün & Dün": gösterilen satırların gün etiketleri, tekrarsız.
+    final labels = <String>[];
+    for (final activity in activities) {
+      final label = dayLabel(activity.startedAt, now);
+      if (!labels.contains(label)) labels.add(label);
     }
-
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: AppSpacing.md,
-        children: [for (final day in days) _DayGroup(day: day, now: now)],
-      ),
-    );
-  }
-}
-
-class _DayGroup extends StatelessWidget {
-  const _DayGroup({required this.day, required this.now});
-
-  final ActivityDay day;
-  final DateTime now;
-
-  @override
-  Widget build(BuildContext context) {
-    final activities = day.activities;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          upperTr(dayLabel(day.date, now)),
-          style: AppTextStyles.labelCaps.copyWith(
-            color: AppColors.textSecondary,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Son Aktiviteler',
+                style: AppTextStyles.titleMd.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            if (labels.isNotEmpty)
+              Text(
+                labels.take(2).join(' & '),
+                style: AppTextStyles.bodySm.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+          ],
         ),
-        const SizedBox(height: AppSpacing.xs),
-        for (var i = 0; i < activities.length; i++)
-          _ActivityRow(
-            activity: activities[i],
-            isFirst: i == 0,
-            isLast: i == activities.length - 1,
+        const SizedBox(height: AppSpacing.sm),
+        if (activities.isEmpty)
+          AppCard(
+            child: Text(
+              'Henüz çalışma yok. Pomodoro ile ilk oturumunu başlat.',
+              style: AppTextStyles.bodyMd.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          )
+        else
+          Column(
+            spacing: AppSpacing.sm,
+            children: [
+              for (final activity in activities)
+                _ActivityRow(
+                  activity: activity,
+                  now: now,
+                  onTap: onTap == null
+                      ? null
+                      : () => onTap!(activity.subjectId),
+                ),
+            ],
           ),
       ],
     );
@@ -78,108 +97,93 @@ class _DayGroup extends StatelessWidget {
 class _ActivityRow extends StatelessWidget {
   const _ActivityRow({
     required this.activity,
-    required this.isFirst,
-    required this.isLast,
+    required this.now,
+    required this.onTap,
   });
 
   final RecentActivity activity;
-  final bool isFirst;
-  final bool isLast;
-
-  Color get _color {
-    final index = activity.subjectIndex;
-    if (index == null) return AppColors.textDisabled;
-    return AppColors.subjectPalette[index % AppColors.subjectPalette.length];
-  }
+  final DateTime now;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _Rail(color: _color, isFirst: isFirst, isLast: isLast),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          activity.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.bodyMd.copyWith(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          DateFormat('HH:mm').format(activity.startedAt),
-                          style: AppTextStyles.bodySm.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
+    final style = SubjectStyle.of(activity.subjectIndex);
+    final time = DateFormat('HH:mm');
+    final end = activity.startedAt.add(Duration(minutes: activity.minutes));
+
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.cardBorder),
+          boxShadow: AppShadows.level1,
+        ),
+        child: Row(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  key: const Key('timeline-dot'),
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: style.tint,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(style.icon, color: style.color),
+                ),
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: style.color,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.surface, width: 2),
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
-                  AppChip(
-                    label: formatMinutes(activity.minutes),
-                    type: AppChipType.duration,
+                ),
+              ],
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    activity.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.bodyMd.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${formatHm(activity.minutes)} (1 Pomodoro) • '
+                    '${dayLabel(activity.startedAt, now)} '
+                    '${time.format(activity.startedAt)} - ${time.format(end)}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.statMono.copyWith(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: style.color,
+                    ),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Satırın solundaki dikey çizgi ve ders renginde nokta. Günün ilk satırında
-/// çizgi noktadan başlar, son satırda noktada biter.
-class _Rail extends StatelessWidget {
-  const _Rail({
-    required this.color,
-    required this.isFirst,
-    required this.isLast,
-  });
-
-  final Color color;
-  final bool isFirst;
-  final bool isLast;
-
-  static const _line = VerticalDivider(
-    width: 2,
-    thickness: 2,
-    color: AppColors.border,
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 16,
-      child: Column(
-        children: [
-          Expanded(child: isFirst ? const SizedBox() : _line),
-          Container(
-            key: const Key('timeline-dot'),
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              shape: BoxShape.circle,
-              border: Border.all(color: color, width: 3),
-            ),
-          ),
-          Expanded(child: isLast ? const SizedBox() : _line),
-        ],
+            const Icon(Icons.chevron_right, color: AppColors.textDisabled),
+          ],
+        ),
       ),
     );
   }

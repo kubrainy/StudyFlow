@@ -194,4 +194,121 @@ void main() {
       expect(sessions.map((s) => s.id), before);
     });
   });
+
+  group('DashboardCalculator.summary yeni alanlar', () {
+    test('Pomodoro sayısı, seri ve bekleyen görev sayısı hesaplanır', () {
+      final summary = calculator.summary(
+        [
+          session(DateTime(2026, 10, 7, 9), 25),
+          session(DateTime(2026, 10, 7, 11), 25),
+          session(DateTime(2026, 10, 6, 9), 25),
+          session(DateTime(2026, 10, 5, 9), 25),
+        ],
+        [
+          task(completedAt: DateTime(2026, 10, 7, 8)),
+          task(done: false),
+          task(done: false),
+        ],
+        now,
+        goalMinutes: 120,
+      );
+
+      expect(summary.todaySessionCount, 2);
+      expect(summary.streakDays, 3);
+      expect(summary.openTaskCount, 2);
+      expect(summary.todayCompletedTasks, 1);
+      expect(summary.totalTaskCount, 3);
+    });
+  });
+
+  group('DashboardCalculator.taskList', () {
+    Task dated(
+      String id,
+      DateTime? due, {
+      bool done = false,
+      DateTime? completedAt,
+    }) => Task(
+      id: id,
+      title: id,
+      isCompleted: done,
+      completedAt: completedAt,
+      dueDate: due,
+      createdAt: DateTime(2026, 1, 1),
+      updatedAt: DateTime(2026, 1, 1),
+    );
+
+    test('bekleyenler ve bugün bitenler gelir, eski bitenler gelmez', () {
+      final list = calculator.taskList([
+        dated('bekleyen', DateTime(2026, 10, 8)),
+        dated(
+          'bugün-biten',
+          DateTime(2026, 10, 7),
+          done: true,
+          completedAt: DateTime(2026, 10, 7, 9),
+        ),
+        dated(
+          'eski-biten',
+          DateTime(2026, 10, 1),
+          done: true,
+          completedAt: DateTime(2026, 10, 2),
+        ),
+        dated('tarihsiz-biten', null, done: true),
+      ], now);
+
+      expect(list.map((t) => t.id), ['bugün-biten', 'bekleyen']);
+    });
+
+    test('son tarihe göre sıralanır, tarihsizler sonda', () {
+      final list = calculator.taskList([
+        dated('c', null),
+        dated('b', DateTime(2026, 10, 9)),
+        dated('a', DateTime(2026, 10, 7)),
+      ], now);
+
+      expect(list.map((t) => t.id), ['a', 'b', 'c']);
+    });
+  });
+
+  group('DashboardCalculator.continueSubject', () {
+    test('en son çalışılan dersi verir', () {
+      final result = calculator.continueSubject(
+        [
+          session(DateTime(2026, 10, 5, 9), 25, subjectId: 'mat'),
+          session(DateTime(2026, 10, 6, 9), 25, subjectId: 'fiz'),
+        ],
+        [subject('mat', 'Matematik'), subject('fiz', 'Fizik')],
+      );
+
+      expect(result?.id, 'fiz');
+    });
+
+    test('en son oturumun dersi silinmişse bir önceki geçerli dersi verir', () {
+      final result = calculator.continueSubject(
+        [
+          session(DateTime(2026, 10, 5, 9), 25, subjectId: 'mat'),
+          session(DateTime(2026, 10, 6, 9), 25, subjectId: 'silinmiş'),
+        ],
+        [subject('mat', 'Matematik')],
+      );
+
+      expect(result?.id, 'mat');
+    });
+
+    test('hiç oturum yoksa ilk dersi, ders de yoksa null verir', () {
+      expect(
+        calculator.continueSubject([], [subject('mat', 'Matematik')])?.id,
+        'mat',
+      );
+      expect(calculator.continueSubject([], []), isNull);
+    });
+
+    test('yalnız serbest çalışma varsa ilk dersi verir', () {
+      final result = calculator.continueSubject(
+        [session(DateTime(2026, 10, 6, 9), 25)],
+        [subject('mat', 'Matematik')],
+      );
+
+      expect(result?.id, 'mat');
+    });
+  });
 }

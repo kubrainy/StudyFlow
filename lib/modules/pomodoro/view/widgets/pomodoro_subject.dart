@@ -7,8 +7,7 @@ import '../../../../core/widgets/modal_blur.dart';
 import '../../../../models/subject.dart';
 import 'pomodoro_sizes.dart';
 
-/// Halkanın altındaki "kitap  Matematik  ▾" seçim alanı (input ölçüsünde:
-/// 48dp, 8dp köşe); bulunduğu satırı doldurur. Sayaç çalışırken
+/// Ekranın üstündeki "kitap  Matematik  ▾" ders hapı. Sayaç çalışırken
 /// [locked] olur: soluk görünür, kilit ikonu çıkar ve dokunulmaz.
 class PomodoroSubjectField extends StatelessWidget {
   const PomodoroSubjectField({
@@ -34,11 +33,11 @@ class PomodoroSubjectField extends StatelessWidget {
           height: PomodoroSizes.subjectField,
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           decoration: BoxDecoration(
-            color: locked ? AppColors.surfaceSubdued : AppColors.surface,
-            border: Border.all(color: AppColors.border),
-            borderRadius: AppRadius.controlAll,
+            color: AppColors.chipFill.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(AppRadius.pill),
           ),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(
                 Icons.menu_book_outlined,
@@ -46,7 +45,7 @@ class PomodoroSubjectField extends StatelessWidget {
                 color: AppColors.primary,
               ),
               const SizedBox(width: AppSpacing.sm),
-              Expanded(
+              Flexible(
                 child: Text(
                   subjectName ?? 'Serbest çalışma',
                   maxLines: 1,

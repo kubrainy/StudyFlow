@@ -1,3 +1,4 @@
+import '../../../core/utils/study_streak.dart';
 import '../../../models/study_session.dart';
 import '../../../models/subject.dart';
 import '../../../models/task.dart';
@@ -36,7 +37,48 @@ class DashboardCalculator {
       todayMinutes: todayMinutes,
       todayCompletedTasks: completedToday,
       goalMinutes: goalMinutes,
+      streakDays: studyStreak(sessions.map((s) => s.startedAt), now),
+      todaySessionCount: sessions
+          .where((s) => _isSameDay(s.startedAt, now))
+          .length,
+      openTaskCount: tasks.where((t) => !t.isCompleted).length,
     );
+  }
+
+  /// "Bugünün Görevleri": bugün tamamlananlar ve bekleyen tüm görevler, son
+  /// tarihi yakın olan önce (tarihsizler sonda).
+  List<Task> taskList(List<Task> tasks, DateTime now) {
+    final list = tasks.where((task) {
+      if (!task.isCompleted) return true;
+      final completedAt = task.completedAt;
+      return completedAt != null && _isSameDay(completedAt, now);
+    }).toList();
+
+    list.sort((a, b) {
+      final ad = a.dueDate;
+      final bd = b.dueDate;
+      if (ad == null && bd == null) return 0;
+      if (ad == null) return 1;
+      if (bd == null) return -1;
+      return ad.compareTo(bd);
+    });
+    return list;
+  }
+
+  /// "Kaldığın yerden devam et" dersi: en son çalışılan ders; hiç oturum yoksa
+  /// (ya da dersi silinmişse) ilk ders; ders yoksa null.
+  Subject? continueSubject(
+    List<StudySession> sessions,
+    List<Subject> subjects,
+  ) {
+    final recent = [...sessions]
+      ..sort((a, b) => b.startedAt.compareTo(a.startedAt));
+    for (final session in recent) {
+      for (final subject in subjects) {
+        if (subject.id == session.subjectId) return subject;
+      }
+    }
+    return subjects.firstOrNull;
   }
 
   /// En yeni [limit] oturumu güne göre gruplar. Günler ve günlerin içindeki

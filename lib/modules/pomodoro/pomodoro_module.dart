@@ -2,9 +2,17 @@ import 'package:flutter_modular/flutter_modular.dart';
 
 import '../../data/local/study_session_local_source.dart';
 import '../../data/repositories/study_session_repository.dart';
+import '../../core/constants/hive_boxes.dart';
+import '../../core/widgets/hive_boxes_gate.dart';
 import 'view/pomodoro_page.dart';
 import 'view_model/pomodoro_view_model.dart';
 import '../../core/notifications/notification_service.dart';
+
+const _boxes = [
+  HiveBoxes.subjects,
+  HiveBoxes.studySessions,
+  HiveBoxes.userSettings,
+];
 
 final pomodoroModule = createModule(
   register: (c) {
@@ -13,6 +21,10 @@ final pomodoroModule = createModule(
     c.addLazySingleton<NotificationService>(NotificationService.new);
     c.addLazySingleton<PomodoroViewModel>(PomodoroViewModel.new);
 
-    c.route('/pomodoro', child: (ctx, state) => const PomodoroPage());
+    c.route(
+      '/pomodoro',
+      child: (ctx, state) =>
+          const HiveBoxesGate(boxes: _boxes, child: PomodoroPage()),
+    );
   },
 );

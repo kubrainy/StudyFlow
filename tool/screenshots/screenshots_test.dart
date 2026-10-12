@@ -38,6 +38,16 @@ void main() {
       reason: 'Bugünün örnek oturumları 09:00–11:00 arasında; saat 11’den sonra çalıştır.',
     );
 
+    // Masaüstünde pencere telefon şeklinde görünsün (telefonda/emülatörde
+    // gerçek ekran kullanılır).
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      tester.view.physicalSize = const Size(780, 1688);
+      tester.view.devicePixelRatio = 2;
+      addTearDown(tester.view.reset);
+    }
+
+    // Kutuları yalnızca örnek veriyi yazmak için burada açıyoruz; uygulamada
+    // bunları modüllerin sayfa kapıları (HiveBoxesGate) açar.
     final dir = await Directory.systemTemp.createTemp('studyflow_shots');
     Hive.init(dir.path);
     for (final name in [
@@ -76,11 +86,9 @@ void main() {
     // 1. Ana sayfa
     await shot('01_ana_sayfa');
 
-    // 2. Ayarlar (ana sayfadaki dişli ile)
-    await tester.tap(find.byTooltip('Ayarlar'));
+    // 2. Ayarlar (alt menüden)
+    await _openTab(tester, 'Ayarlar');
     await shot('09_ayarlar');
-    await _back(tester);
-    await _settle(tester);
 
     // 3. Dersler ve ders detayı
     await _openTab(tester, 'Dersler');
@@ -95,13 +103,15 @@ void main() {
     await _back(tester);
     await _settle(tester);
 
-    // 4. Görevler ve görev ekleme formu
-    await _openTab(tester, 'Görevler');
+    // 4. Görevler (Özet'teki "Tümü" bağlantısıyla açılır) ve görev ekleme formu
+    await _openTab(tester, 'Özet');
+    await tester.tap(find.byKey(const Key('tasks-see-all')));
     await shot('04_gorevler');
     await tester.tap(find.byTooltip('Görev ekle'));
     await shot('05_gorev_ekle');
     await tester.tapAt(const Offset(20, 80)); // paneli kapat
     await _settle(tester);
+    await _back(tester);
 
     // 5. Pomodoro: hazır, sonra çalışıyor
     await _openTab(tester, 'Pomodoro');
@@ -128,7 +138,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
     }
     debugPrint('ADIM: istatistikler');
-    await _openTab(tester, 'İstatistikler');
+    await _openTab(tester, 'Analiz');
     await shot('08_istatistikler');
 
     await Hive.close();

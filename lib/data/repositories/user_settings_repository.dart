@@ -14,6 +14,8 @@ class UserSettingsRepository {
     int? pomodoroMinutes,
     int? breakMinutes,
     bool? notificationsEnabled,
+    int? longBreakMinutes,
+    int? longBreakEvery,
   }) async {
     final updated = _local.get().copyWith(
       name: name,
@@ -21,6 +23,8 @@ class UserSettingsRepository {
       pomodoroMinutes: pomodoroMinutes,
       breakMinutes: breakMinutes,
       notificationsEnabled: notificationsEnabled,
+      longBreakMinutes: longBreakMinutes,
+      longBreakEvery: longBreakEvery,
     );
     await _local.save(updated);
     return updated;

@@ -43,6 +43,7 @@ Future<void> _pump(
   WidgetTester tester,
   List<ActivityDay> days, {
   double width = 360,
+  ValueChanged<String?>? onTap,
 }) {
   return tester.pumpWidget(
     MaterialApp(
@@ -50,7 +51,7 @@ Future<void> _pump(
         body: SingleChildScrollView(
           child: SizedBox(
             width: width,
-            child: RecentActivityTimeline(days: days, now: _now),
+            child: RecentActivityList(days: days, now: _now, onTap: onTap),
           ),
         ),
       ),
@@ -59,23 +60,31 @@ Future<void> _pump(
 }
 
 void main() {
-  testWidgets('gün başlıklarını, ders adlarını, saatleri ve süreleri yazar', (
+  testWidgets('ders adı, süre, gün ve saat aralığı yazılır', (tester) async {
+    await _pump(tester, _days);
+
+    expect(find.text('Matematik'), findsOneWidget);
+    expect(find.text('Serbest çalışma'), findsOneWidget);
+    expect(find.text('Fizik'), findsOneWidget);
+    expect(
+      find.text('25dk (1 Pomodoro) • Bugün 14:05 - 14:30'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('1s 05dk (1 Pomodoro) • Dün 19:45 - 20:50'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('başlığın sağında gösterilen günler yazılır (Bugün & Dün)', (
     tester,
   ) async {
     await _pump(tester, _days);
 
-    expect(find.text('BUGÜN'), findsOneWidget);
-    expect(find.text('DÜN'), findsOneWidget);
-    expect(find.text('Matematik'), findsOneWidget);
-    expect(find.text('Serbest çalışma'), findsOneWidget);
-    expect(find.text('14:05'), findsOneWidget);
-    expect(find.text('25 dk'), findsOneWidget);
-    expect(find.text('1 sa 5 dk'), findsOneWidget);
+    expect(find.text('Bugün & Dün'), findsOneWidget);
   });
 
-  testWidgets('eski günün başlığı Türkçe büyük harfle yazılır (EKİ)', (
-    tester,
-  ) async {
+  testWidgets('eski günün adı "5 Eki" olarak yazılır', (tester) async {
     await _pump(tester, [
       ActivityDay(
         date: DateTime(2026, 10, 5),
@@ -89,13 +98,35 @@ void main() {
       ),
     ]);
 
-    expect(find.text('5 EKİ'), findsOneWidget);
+    expect(find.text('5 Eki'), findsWidgets);
   });
 
-  testWidgets('her satır için bir nokta çizer', (tester) async {
-    await _pump(tester, _days);
+  testWidgets('en çok üç satır gösterilir', (tester) async {
+    await _pump(tester, [
+      ActivityDay(
+        date: DateTime(2026, 10, 7),
+        activities: [
+          for (var i = 0; i < 5; i++)
+            RecentActivity(
+              name: 'Ders $i',
+              startedAt: DateTime(2026, 10, 7, 8 + i),
+              minutes: 10,
+            ),
+        ],
+      ),
+    ]);
 
     expect(find.byKey(const Key('timeline-dot')), findsNWidgets(3));
+  });
+
+  testWidgets('satıra dokununca dersin id\'si bildirilir', (tester) async {
+    final taps = <String?>[];
+    await _pump(tester, _days, onTap: taps.add);
+
+    await tester.tap(find.text('Matematik'));
+    await tester.tap(find.text('Serbest çalışma'));
+
+    expect(taps, ['mat', null]);
   });
 
   testWidgets('liste boşsa açıklama yazar', (tester) async {

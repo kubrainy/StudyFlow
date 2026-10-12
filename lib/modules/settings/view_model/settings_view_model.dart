@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 
 import '../../../data/repositories/study_session_repository.dart';
@@ -27,6 +29,10 @@ class SettingsViewModel extends ChangeNotifier {
   static const goalRange = (min: 15, max: 600, step: 15);
   static const workRange = PomodoroViewModel.workRange;
   static const restRange = PomodoroViewModel.restRange;
+  static const longRestRange = PomodoroViewModel.longRestRange;
+
+  /// Kaç çalışma oturumunda bir uzun mola verileceği.
+  static const longEveryRange = (min: 2, max: 8, step: 1);
 
   SettingsStatus _status = SettingsStatus.loading;
   String? _errorMessage;
@@ -88,8 +94,36 @@ class SettingsViewModel extends ChangeNotifier {
     ),
   );
 
+  Future<void> setLongBreakMinutes(int minutes) => _save(
+    () => _settingsRepository.update(
+      longBreakMinutes: minutes.clamp(longRestRange.min, longRestRange.max),
+    ),
+  );
+
+  Future<void> setLongBreakEvery(int count) => _save(
+    () => _settingsRepository.update(
+      longBreakEvery: count.clamp(longEveryRange.min, longEveryRange.max),
+    ),
+  );
+
   Future<void> setNotificationsEnabled(bool enabled) =>
       _save(() => _settingsRepository.update(notificationsEnabled: enabled));
+
+  /// Bütün verinin (dersler, görevler, çalışma oturumları, ayarlar) JSON
+  /// yedeği. Ekran bunu panoya kopyalar.
+  String exportJson() {
+    const encoder = JsonEncoder.withIndent('  ');
+    return encoder.convert({
+      'exportedAt': DateTime.now().toIso8601String(),
+      'settings': _settingsRepository.get().toJson(),
+      'subjects': _subjectRepository.getAll().map((s) => s.toJson()).toList(),
+      'tasks': _taskRepository.getAll().map((t) => t.toJson()).toList(),
+      'studySessions': _sessionRepository
+          .getAll()
+          .map((s) => s.toJson())
+          .toList(),
+    });
+  }
 
   /// Repository'ye yazar, dönen güncel ayarı saklar ve ekranı yeniler.
   Future<void> _save(Future<UserSettings> Function() update) async {

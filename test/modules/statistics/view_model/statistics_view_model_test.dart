@@ -8,6 +8,7 @@ import 'package:studyflow/models/study_session.dart';
 import 'package:studyflow/models/subject.dart';
 import 'package:studyflow/models/task.dart';
 import 'package:studyflow/models/user_settings.dart';
+import 'package:studyflow/modules/statistics/models/range_stats.dart';
 import 'package:studyflow/modules/statistics/view_model/statistics_view_model.dart';
 
 class MockStudySessionRepository extends Mock
@@ -197,6 +198,97 @@ void main() {
       viewModel.load();
 
       expect(statuses, [StatisticsStatus.loading, StatisticsStatus.empty]);
+    });
+  });
+
+  group('StatisticsViewModel aralık ve rozetler', () {
+    test('varsayılan aralık Haftalık, rakamlar load ile hesaplanır', () {
+      when(() => sessions.getAll()).thenReturn([session(30)]);
+
+      viewModel.load();
+
+      expect(viewModel.range, StatsRange.week);
+      expect(viewModel.rangeStats!.totalMinutes, 30);
+    });
+
+    test(
+      'setRange rakamları yeniden hesaplar ve dinleyicilere haber verir',
+      () {
+        when(() => sessions.getAll()).thenReturn([session(30)]);
+        viewModel.load();
+        var notified = 0;
+        viewModel.addListener(() => notified++);
+
+        viewModel.setRange(StatsRange.all);
+
+        expect(viewModel.range, StatsRange.all);
+        expect(viewModel.rangeStats!.comparisonLabel, isNull);
+        expect(notified, 1);
+      },
+    );
+
+    test('aynı aralığı seçmek hiçbir şey yapmaz', () {
+      viewModel.load();
+      var notified = 0;
+      viewModel.addListener(() => notified++);
+
+      viewModel.setRange(StatsRange.week);
+
+      expect(notified, 0);
+    });
+
+    test('rozetler: seri, günlük hedef ve görev sayısına göre kazanılır', () {
+      // Bugün 60 dk (hedef 60) + 3 gün seri + 10 biten görev.
+      when(() => sessions.getAll()).thenReturn([
+        StudySession(
+          id: 'a',
+          startedAt: DateTime(2026, 10, 7, 9),
+          durationMinutes: 60,
+        ),
+        StudySession(
+          id: 'b',
+          startedAt: DateTime(2026, 10, 6, 9),
+          durationMinutes: 10,
+        ),
+        StudySession(
+          id: 'c',
+          startedAt: DateTime(2026, 10, 5, 9),
+          durationMinutes: 10,
+        ),
+      ]);
+      when(() => tasks.getAll()).thenReturn([
+        for (var i = 0; i < 10; i++)
+          Task(
+            id: 't$i',
+            title: 'g',
+            isCompleted: true,
+            completedAt: now,
+            createdAt: DateTime(2026, 1, 1),
+            updatedAt: DateTime(2026, 1, 1),
+          ),
+      ]);
+
+      viewModel.load();
+
+      final badges = viewModel.badges;
+      expect(badges.map((b) => b.title), [
+        'İstikrar Ustası',
+        'Hedef Avcısı',
+        'Görev Canavarı',
+      ]);
+      expect(badges.every((b) => b.earned), isTrue);
+    });
+
+    test('hiçbir şey yapılmadıysa rozetler kilitli ve hedefi söyler', () {
+      when(() => sessions.getAll()).thenReturn([session(10)]);
+
+      viewModel.load();
+
+      final badges = viewModel.badges;
+      expect(badges.any((b) => b.earned), isFalse);
+      expect(badges[0].description, contains('3 gün'));
+      expect(badges[1].description, contains('60 dk'));
+      expect(badges[2].description, contains('10 görev'));
     });
   });
 }

@@ -71,19 +71,72 @@ class AppChip extends StatelessWidget {
   }
 }
 
-class AppCard extends StatelessWidget {
-  const AppCard({super.key, required this.child});
+/// Küçük, mono yazılı hap rozet ("%68 Tamamlandı", "4 Ders", "KAZANILDI").
+class AppBadge extends StatelessWidget {
+  const AppBadge({
+    super.key,
+    required this.label,
+    this.fill = AppColors.chipFill,
+    this.color = AppColors.primary,
+    this.icon,
+  });
 
-  final Widget child;
+  final String label;
+  final Color fill;
+  final Color color;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 12, color: color),
+            const SizedBox(width: 4),
+          ],
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.statMono.copyWith(
+                fontSize: 11,
+                height: 1.3,
+                color: color,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class AppCard extends StatelessWidget {
+  const AppCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(AppSpacing.md),
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: padding,
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.border, width: 1),
+        border: Border.all(color: AppColors.cardBorder, width: 1),
         boxShadow: AppShadows.level1,
       ),
       child: child,

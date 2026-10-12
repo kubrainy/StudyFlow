@@ -33,4 +33,25 @@ void main() {
       expect(_summary(today: 200, goal: 120).remainingMinutes, 0);
     });
   });
+
+  group('yeni alanlar', () {
+    test('varsayılan olarak seri, oturum ve bekleyen görev 0', () {
+      final summary = _summary(today: 0);
+
+      expect(summary.streakDays, 0);
+      expect(summary.todaySessionCount, 0);
+      expect(summary.openTaskCount, 0);
+    });
+
+    test('totalTaskCount bugün bitenler + bekleyenlerdir', () {
+      const summary = DashboardSummary(
+        todayMinutes: 0,
+        todayCompletedTasks: 6,
+        goalMinutes: 120,
+        openTaskCount: 2,
+      );
+
+      expect(summary.totalTaskCount, 8);
+    });
+  });
 }

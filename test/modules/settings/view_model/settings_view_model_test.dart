@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:studyflow/data/repositories/study_session_repository.dart';
@@ -71,6 +73,8 @@ void main() {
         pomodoroMinutes: any(named: 'pomodoroMinutes'),
         breakMinutes: any(named: 'breakMinutes'),
         notificationsEnabled: any(named: 'notificationsEnabled'),
+        longBreakMinutes: any(named: 'longBreakMinutes'),
+        longBreakEvery: any(named: 'longBreakEvery'),
       ),
     ).thenAnswer((_) async => const UserSettings(name: 'Yeni'));
   });
@@ -182,6 +186,43 @@ void main() {
       expect(viewModel.status, SettingsStatus.success);
       expect(viewModel.errorMessage, contains('yazılamadı'));
       expect(viewModel.settings.name, 'Kübra');
+    });
+  });
+
+  group('uzun mola ayarları ve yedek', () {
+    test('setLongBreakMinutes uzun mola aralığına (5-60) çeker', () async {
+      await viewModel.setLongBreakMinutes(500);
+      await viewModel.setLongBreakMinutes(1);
+
+      verify(() => settings.update(longBreakMinutes: 60)).called(1);
+      verify(() => settings.update(longBreakMinutes: 5)).called(1);
+    });
+
+    test('setLongBreakEvery oturum aralığına (2-8) çeker', () async {
+      await viewModel.setLongBreakEvery(99);
+      await viewModel.setLongBreakEvery(0);
+
+      verify(() => settings.update(longBreakEvery: 8)).called(1);
+      verify(() => settings.update(longBreakEvery: 2)).called(1);
+    });
+
+    test('exportJson bütün veriyi okunur JSON olarak verir', () {
+      final json = jsonDecode(viewModel.exportJson()) as Map<String, dynamic>;
+
+      expect(
+        json.keys,
+        containsAll([
+          'exportedAt',
+          'settings',
+          'subjects',
+          'tasks',
+          'studySessions',
+        ]),
+      );
+      expect((json['settings'] as Map)['name'], 'Kübra');
+      expect(json['subjects'], hasLength(2));
+      expect(json['tasks'], hasLength(3));
+      expect(json['studySessions'], hasLength(2));
     });
   });
 }

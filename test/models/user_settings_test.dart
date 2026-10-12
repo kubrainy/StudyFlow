@@ -63,4 +63,47 @@ void main() {
       expect(updated.notificationsEnabled, true);
     });
   });
+
+  group('UserSettings uzun mola alanları', () {
+    test('varsayılan: 15 dk uzun mola, 4 oturumda bir', () {
+      const settings = UserSettings();
+
+      expect(settings.longBreakMinutes, 15);
+      expect(settings.longBreakEvery, 4);
+    });
+
+    test('toJson sonra fromJson uzun mola ayarlarını korur', () {
+      const settings = UserSettings(longBreakMinutes: 20, longBreakEvery: 3);
+
+      final result = UserSettings.fromJson(settings.toJson());
+
+      expect(result.longBreakMinutes, 20);
+      expect(result.longBreakEvery, 3);
+    });
+
+    test('uzun mola anahtarı olmayan eski kayıt varsayılanla okunur', () {
+      final result = UserSettings.fromJson({
+        'dailyGoalMinutes': 90,
+        'pomodoroMinutes': 50,
+        'breakMinutes': 10,
+        'notificationsEnabled': false,
+      });
+
+      expect(result.longBreakMinutes, 15);
+      expect(result.longBreakEvery, 4);
+    });
+
+    test('copyWith uzun mola alanlarını değiştirir, diğerlerini korur', () {
+      const settings = UserSettings(name: 'Ayşe');
+
+      final updated = settings.copyWith(
+        longBreakMinutes: 30,
+        longBreakEvery: 2,
+      );
+
+      expect(updated.longBreakMinutes, 30);
+      expect(updated.longBreakEvery, 2);
+      expect(updated.name, 'Ayşe');
+    });
+  });
 }

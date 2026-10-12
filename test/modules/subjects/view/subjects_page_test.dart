@@ -5,8 +5,12 @@ import 'package:studyflow/core/network/api_exception.dart';
 import 'package:studyflow/data/repositories/subject_repository.dart';
 import 'package:studyflow/data/repositories/task_repository.dart';
 import 'package:studyflow/models/subject.dart';
+import 'package:studyflow/models/task.dart';
+import 'package:studyflow/modules/subjects/view/widgets/subject_card.dart';
 import 'package:studyflow/modules/subjects/view/subjects_page.dart';
 import 'package:studyflow/modules/subjects/view_model/subjects_view_model.dart';
+
+import '../../../helpers/test_fonts.dart';
 
 class _FakeTaskRepository implements TaskRepository {
   @override
@@ -31,6 +35,8 @@ class _FakeRepository implements SubjectRepository {
 }
 
 void main() {
+  setUpAll(loadAppFonts);
+
   testWidgets('okuma hatasında hata ekranı çıkar, Tekrar dene yeniden yükler', (
     tester,
   ) async {
@@ -134,6 +140,121 @@ void main() {
 
       expect(find.text('Ders silindi'), findsOneWidget);
       expect(find.textContaining('İşlem başarısız'), findsNothing);
+    });
+  });
+
+  group('Figma tasarımı: başlık, arama, filtre, genel performans', () {
+    Subject named(String id, String name, int minutes) => Subject(
+      id: id,
+      name: name,
+      createdAt: DateTime(2026, 10, 1),
+      updatedAt: DateTime(2026, 10, 1),
+      totalStudyMinutes: minutes,
+    );
+
+    late _MockSubjectRepository subjects;
+    late _MockTaskRepository tasks;
+    late SubjectsViewModel viewModel;
+
+    setUpAll(() => registerFallbackValue(named('x', 'x', 0)));
+
+    setUp(() {
+      subjects = _MockSubjectRepository();
+      tasks = _MockTaskRepository();
+      viewModel = SubjectsViewModel(subjects, tasks);
+      when(() => subjects.getAll())
+          .thenReturn([named('a', 'Matematik', 60), named('b', 'Fizik', 120)]);
+      when(() => tasks.getBySubjectId('a')).thenReturn([
+        Task(
+          id: '1',
+          title: 'Türev',
+          createdAt: DateTime(2026, 1, 1),
+          updatedAt: DateTime(2026, 1, 1),
+        ),
+      ]);
+      when(() => tasks.getBySubjectId('b')).thenReturn([]);
+    });
+
+    Future<void> openPage(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(390, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(home: SubjectsPage(viewModel: viewModel)),
+      );
+    }
+
+    testWidgets('başlık, ders sayısı rozeti ve Yeni Ders düğmesi görünür', (
+      tester,
+    ) async {
+      await openPage(tester);
+
+      expect(find.text('Derslerim'), findsOneWidget);
+      expect(find.text('2 DERS'), findsOneWidget);
+      expect(find.text('Yeni Ders'), findsOneWidget);
+      expect(find.byTooltip('Ders ekle'), findsOneWidget);
+    });
+
+    testWidgets('her ders için bir kart ve altta Genel Performans çıkar', (
+      tester,
+    ) async {
+      await openPage(tester);
+
+      expect(find.byType(SubjectCard), findsNWidgets(2));
+      expect(find.text('Genel Performans'), findsOneWidget);
+      expect(find.text('2 Kayıtlı Ders • Toplam 3s 00dk'), findsOneWidget);
+      expect(find.text('Görev %0'), findsOneWidget);
+    });
+
+    testWidgets('arama kutusuna yazınca kartlar süzülür', (tester) async {
+      await openPage(tester);
+
+      await tester.enterText(find.byType(TextField), 'fiz');
+      await tester.pump();
+
+      expect(find.byType(SubjectCard), findsOneWidget);
+      expect(find.text('Fizik'), findsWidgets);
+      expect(find.text('Matematik'), findsNothing);
+    });
+
+    testWidgets('sonuç yoksa "Sonuç bulunamadı" yazar', (tester) async {
+      await openPage(tester);
+
+      await tester.enterText(find.byType(TextField), 'zzz');
+      await tester.pump();
+
+      expect(find.text('Sonuç bulunamadı'), findsOneWidget);
+    });
+
+    testWidgets('Görevi Bekleyen çipi yalnız açık görevi olan dersi bırakır', (
+      tester,
+    ) async {
+      await openPage(tester);
+
+      await tester.tap(find.text('Görevi Bekleyen'));
+      await tester.pump();
+
+      expect(find.byType(SubjectCard), findsOneWidget);
+      expect(find.text('Matematik'), findsWidgets);
+    });
+
+    testWidgets('Tümü çipinde ders sayısı yazar', (tester) async {
+      await openPage(tester);
+
+      expect(find.text('Tümü (2)'), findsOneWidget);
+    });
+
+    testWidgets('üç nokta menüsünden Sil seçilince onay penceresi açılır', (
+      tester,
+    ) async {
+      await openPage(tester);
+
+      await tester.tap(find.byTooltip('Daha fazla').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sil'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Dersi sil'), findsOneWidget);
     });
   });
 }

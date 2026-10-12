@@ -6,13 +6,32 @@ import '../../../data/repositories/study_session_repository.dart';
 import '../../../data/repositories/subject_repository.dart';
 import '../../../data/repositories/task_repository.dart';
 import '../../../data/repositories/user_settings_repository.dart';
+import '../../../core/utils/study_streak.dart';
+import '../../../models/study_session.dart';
+import '../../../models/subject.dart';
+import '../../../models/task.dart';
 import '../../../models/user_settings.dart';
 import '../models/daily_minutes.dart';
+import '../models/range_stats.dart';
 import '../models/statistics_summary.dart';
 import '../models/subject_share.dart';
 import 'statistics_calculator.dart';
 
 enum StatisticsStatus { loading, empty, error, success }
+
+/// "İçgörüler ve Rozetler" bölümündeki bir rozet. [earned] false ise kilitli
+/// görünür ve [description] hedefi söyler.
+class StatsBadge {
+  const StatsBadge({
+    required this.title,
+    required this.description,
+    required this.earned,
+  });
+
+  final String title;
+  final String description;
+  final bool earned;
+}
 
 class StatisticsViewModel extends ChangeNotifier {
   final StudySessionRepository _sessionRepository;
@@ -41,6 +60,65 @@ class StatisticsViewModel extends ChangeNotifier {
   int _todayIndex = 0;
   List<DailyMinutes> _daily = [];
   List<SubjectShare> _shares = [];
+
+  // Aralık seçimi ("Haftalık" varsayılan) ve son yüklenen ham veri.
+  StatsRange _range = StatsRange.week;
+  RangeStats? _rangeStats;
+  List<StatsBadge> _badges = [];
+  List<StudySession> _sessions = [];
+  List<Task> _tasks = [];
+  List<Subject> _subjects = [];
+
+  StatsRange get range => _range;
+
+  /// Seçili aralığın rakamları; veri yüklenmeden önce null.
+  RangeStats? get rangeStats => _rangeStats;
+  List<StatsBadge> get badges => _badges;
+
+  /// Aralığı değiştirir ve rakamları yeniden hesaplar (veriyi yeniden okumaz).
+  void setRange(StatsRange value) {
+    if (value == _range) return;
+    _range = value;
+    _computeRange();
+    notifyListeners();
+  }
+
+  void _computeRange() {
+    final now = _now();
+    _rangeStats = _calculator.range(
+      _sessions,
+      _tasks,
+      _subjects,
+      now,
+      _range,
+      goalMinutes: _dailyGoalMinutes,
+    );
+    final streak = studyStreak(_sessions.map((s) => s.startedAt), now);
+    final completedTotal = _tasks.where((t) => t.isCompleted).length;
+    _badges = [
+      StatsBadge(
+        title: 'İstikrar Ustası',
+        description: streak >= 3
+            ? '$streak gün üst üste çalışma tamamlandı'
+            : 'Hedef: 3 gün üst üste çalışma (şu an $streak gün)',
+        earned: streak >= 3,
+      ),
+      StatsBadge(
+        title: 'Hedef Avcısı',
+        description: _summary.todayMinutes >= _dailyGoalMinutes
+            ? 'Bugünkü günlük hedefine ulaştın'
+            : 'Hedef: bugün $_dailyGoalMinutes dk çalışmak',
+        earned: _summary.todayMinutes >= _dailyGoalMinutes,
+      ),
+      StatsBadge(
+        title: 'Görev Canavarı',
+        description: completedTotal >= 10
+            ? '$completedTotal görev tamamlandı'
+            : 'Hedef: 10 görev tamamlamak (şu an $completedTotal)',
+        earned: completedTotal >= 10,
+      ),
+    ];
+  }
 
   /// Halkanın hedefi (Ayarlar'daki günlük hedef).
   int get dailyGoalMinutes => _dailyGoalMinutes;
@@ -79,6 +157,10 @@ class StatisticsViewModel extends ChangeNotifier {
       _daily = _calculator.dailyMinutes(sessions, now);
       _todayIndex = now.weekday - 1;
       _shares = _calculator.subjectShares(sessions, subjects);
+      _sessions = sessions;
+      _tasks = tasks;
+      _subjects = subjects;
+      _computeRange();
       _status = sessions.isEmpty && _summary.weekCompletedTasks == 0
           ? StatisticsStatus.empty
           : StatisticsStatus.success;

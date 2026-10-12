@@ -7,8 +7,10 @@ import '../../../data/repositories/subject_repository.dart';
 import '../../../data/repositories/user_settings_repository.dart';
 import '../../../models/subject.dart';
 import '../../../core/notifications/notification_service.dart';
+import '../../../core/utils/study_streak.dart';
 
-enum PomodoroPhase { work, rest }
+/// Odaklan, kısa mola, uzun mola.
+enum PomodoroPhase { work, rest, longRest }
 
 enum PomodoroStatus { idle, running, paused }
 
@@ -61,6 +63,7 @@ class PomodoroViewModel extends ChangeNotifier {
   /// Süre ayar aralıkları (dk) ve adımları. Ekrandaki +/- bunları kullanır.
   static const workRange = (min: 5, max: 120, step: 5);
   static const restRange = (min: 1, max: 30, step: 1);
+  static const longRestRange = (min: 5, max: 60, step: 5);
 
   /// Oturum kaydı başarısız olursa (ör. ders silinmiş) mesajı burada durur.
   String? _errorMessage;
@@ -95,11 +98,50 @@ class PomodoroViewModel extends ChangeNotifier {
 
   Duration _durationFor(PomodoroPhase phase) {
     final settings = _settings.get();
-    final minutes = phase == PomodoroPhase.work
-        ? settings.pomodoroMinutes
-        : settings.breakMinutes;
+    final minutes = switch (phase) {
+      PomodoroPhase.work => settings.pomodoroMinutes,
+      PomodoroPhase.rest => settings.breakMinutes,
+      PomodoroPhase.longRest => settings.longBreakMinutes,
+    };
     return Duration(minutes: minutes);
   }
+
+  /// Sekme şeridinde ("Odaklan (25dk)") görünen süreler.
+  int minutesOf(PomodoroPhase phase) => _durationFor(phase).inMinutes;
+
+  /// Ayarlardaki "kaç oturumda bir uzun mola".
+  int get longBreakEvery => _settings.get().longBreakEvery;
+
+  bool get notificationsEnabled => _settings.get().notificationsEnabled;
+
+  Future<void> setNotificationsEnabled(bool enabled) async {
+    await _settings.update(notificationsEnabled: enabled);
+    notifyListeners();
+  }
+
+  int get dailyGoalMinutes => _settings.get().dailyGoalMinutes;
+
+  bool _isToday(DateTime d) {
+    final now = _now();
+    return d.year == now.year && d.month == now.month && d.day == now.day;
+  }
+
+  /// Bugün kaydedilen odaklanma oturumu sayısı.
+  int get todaySessionCount =>
+      _sessions.getAll().where((s) => _isToday(s.startedAt)).length;
+
+  /// Bugünkü toplam odaklanma süresi (dk), serbest çalışma dahil.
+  int get todayTotalMinutes => _sessions
+      .getAll()
+      .where((s) => _isToday(s.startedAt))
+      .fold(0, (sum, s) => sum + s.durationMinutes);
+
+  /// Üst üste çalışılan gün sayısı ("SERİ #4").
+  int get streakDays =>
+      studyStreak(_sessions.getAll().map((s) => s.startedAt), _now());
+
+  /// Uzun mola döngüsünde bu turda biten oturum sayısı (0 .. longBreakEvery-1).
+  int get completedInCycle => todaySessionCount % longBreakEvery;
 
   /// Bu aşamada şimdiye kadar geçen süre.
   Duration get elapsed {
@@ -128,8 +170,11 @@ class PomodoroViewModel extends ChangeNotifier {
   }
 
   /// Şu anki aşamanın süre aralığı.
-  ({int min, int max, int step}) get durationRange =>
-      _phase == PomodoroPhase.work ? workRange : restRange;
+  ({int min, int max, int step}) get durationRange => switch (_phase) {
+    PomodoroPhase.work => workRange,
+    PomodoroPhase.rest => restRange,
+    PomodoroPhase.longRest => longRestRange,
+  };
 
   /// Şu anki aşamanın süresini (dk) ayarlara kaydeder. Yalnızca hazırdayken
   /// çalışır; çalışan sayaç başladığı süreyle biter. Aralık dışı değer sınıra
@@ -138,10 +183,13 @@ class PomodoroViewModel extends ChangeNotifier {
     if (_status != PomodoroStatus.idle) return;
     final range = durationRange;
     final value = minutes.clamp(range.min, range.max);
-    if (_phase == PomodoroPhase.work) {
-      await _settings.update(pomodoroMinutes: value);
-    } else {
-      await _settings.update(breakMinutes: value);
+    switch (_phase) {
+      case PomodoroPhase.work:
+        await _settings.update(pomodoroMinutes: value);
+      case PomodoroPhase.rest:
+        await _settings.update(breakMinutes: value);
+      case PomodoroPhase.longRest:
+        await _settings.update(longBreakMinutes: value);
     }
     notifyListeners();
   }
@@ -236,7 +284,7 @@ class PomodoroViewModel extends ChangeNotifier {
   }
 
   Future<void> _completePhase() async {
-    if (_phase == PomodoroPhase.rest) {
+    if (_phase != PomodoroPhase.work) {
       _clear();
       notifyListeners();
       return;
@@ -247,9 +295,15 @@ class PomodoroViewModel extends ChangeNotifier {
     // Uygulama arkadayken süre dolduysa mola, çalışmanın bittiği andan sayılır.
     final phaseEnd = _now().subtract(elapsed - totalDuration);
 
+    // Bu oturum kaydedilince bugünkü sayı bir artacak; döngü dolduysa uzun mola.
+    final doneAfterThis = todaySessionCount + 1;
+    final next = doneAfterThis % longBreakEvery == 0
+        ? PomodoroPhase.longRest
+        : PomodoroPhase.rest;
+
     // Önce durumu değiştir (senkron), sonra kaydet: art arda iki tick
     // aynı oturumu iki kez kaydetmesin.
-    _beginPhase(PomodoroPhase.rest, phaseEnd);
+    _beginPhase(next, phaseEnd);
     notifyListeners();
     await _saveSession(startedAt, minutes);
   }

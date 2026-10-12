@@ -55,6 +55,17 @@ void main() {
     updatedAt: DateTime(2026, 1, 1),
   );
 
+  setUpAll(
+    () => registerFallbackValue(
+      Task(
+        id: 'x',
+        title: 'x',
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      ),
+    ),
+  );
+
   setUp(() {
     sessions = MockStudySessionRepository();
     tasks = MockTaskRepository();
@@ -166,6 +177,76 @@ void main() {
       viewModel.load();
 
       expect(statuses, [DashboardStatus.loading, DashboardStatus.success]);
+    });
+  });
+
+  group('DashboardViewModel yeni ekran verileri', () {
+    Task open(String id, DateTime? due) => Task(
+      id: id,
+      title: id,
+      dueDate: due,
+      createdAt: DateTime(2026, 1, 1),
+      updatedAt: DateTime(2026, 1, 1),
+    );
+
+    test('görev listesi bekleyenler ve bugün bitenlerden oluşur', () {
+      when(() => tasks.getAll()).thenReturn([
+        open('b', DateTime(2026, 10, 9)),
+        completedTask(DateTime(2026, 10, 7, 9)),
+        completedTask(DateTime(2026, 10, 1)),
+      ]);
+
+      viewModel.load();
+
+      expect(viewModel.tasks, hasLength(2));
+      expect(viewModel.summary.openTaskCount, 1);
+    });
+
+    test('devam dersi en son çalışılan derstir', () {
+      when(
+        () => sessions.getAll(),
+      ).thenReturn([session(DateTime(2026, 10, 7, 9), 25, subjectId: 'mat')]);
+
+      viewModel.load();
+
+      expect(viewModel.continueSubject?.id, 'mat');
+      expect(viewModel.subjects, [math]);
+    });
+
+    test('Pomodoro süresi Ayarlar\'dan gelir', () {
+      when(() => settings.get())
+          .thenReturn(const UserSettings(pomodoroMinutes: 45));
+
+      viewModel.load();
+
+      expect(viewModel.pomodoroMinutes, 45);
+    });
+
+    test('toggleTask görevi tamamlandı yapar ve ekranı yeniler', () async {
+      final task = open('x', null);
+      when(() => tasks.getAll()).thenReturn([task]);
+      when(() => tasks.setCompleted(any(), any()))
+          .thenAnswer((_) async => task);
+      viewModel.load();
+      var notified = 0;
+      viewModel.addListener(() => notified++);
+
+      await viewModel.toggleTask(task);
+
+      verify(() => tasks.setCompleted(task, true)).called(1);
+      expect(notified, greaterThan(0));
+      expect(viewModel.status, DashboardStatus.success);
+    });
+
+    test('toggleTask hata verse de ekran success kalır', () async {
+      final task = open('x', null);
+      when(() => tasks.getAll()).thenReturn([task]);
+      when(() => tasks.setCompleted(any(), any())).thenThrow(Exception('hata'));
+      viewModel.load();
+
+      await viewModel.toggleTask(task);
+
+      expect(viewModel.status, DashboardStatus.success);
     });
   });
 }

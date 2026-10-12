@@ -8,7 +8,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:studyflow/app_module.dart';
 import 'package:studyflow/app_widget.dart';
-import 'package:studyflow/core/constants/hive_boxes.dart';
 import 'package:studyflow/data/local/study_session_local_source.dart';
 import 'package:studyflow/data/local/subject_local_source.dart';
 import 'package:studyflow/data/local/task_local_source.dart';
@@ -31,8 +30,9 @@ Future<void> waitUntil(
   throw TestFailure('5 saniyede olmadı: $reason');
 }
 
+/// Alt menüdeki sekmeyi açar; aynı yazı sayfada da geçebilir, menü en sonda.
 Future<void> openTab(WidgetTester tester, String label) async {
-  await tester.tap(find.text(label));
+  await tester.tap(find.text(label).last);
   await tester.pumpAndSettle();
 }
 
@@ -47,16 +47,9 @@ void main() {
       // uygulama verisine dokunulmaz).
       final dir = await Directory.systemTemp.createTemp('studyflow_it');
       Hive.init(dir.path);
-      for (final name in [
-        HiveBoxes.subjects,
-        HiveBoxes.tasks,
-        HiveBoxes.studySessions,
-        HiveBoxes.userSettings,
-      ]) {
-        await Hive.openBox(name);
-      }
 
-      // 1. UYGULAMAYI AÇ: main.dart'ın yaptığıyla aynı.
+      // 1. UYGULAMAYI AÇ: main.dart'ın yaptığıyla aynı. Kutuları modüllerin
+      // sayfa kapıları (HiveBoxesGate) açar, test açmaz.
       await tester.pumpWidget(
         ModularApp(
           module: appModule,
@@ -80,8 +73,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // 3. GÖREV OLUŞTUR (Matematik'e bağlı) ve TAMAMLA
-      await openTab(tester, 'Görevler');
+      // 3. GÖREV OLUŞTUR (Matematik'e bağlı) ve TAMAMLA. Görevler alt menüde
+      //    değil: Özet'teki "Görev ekle" bağlantısı görev sayfasını açar.
+      await openTab(tester, 'Özet');
+      await tester.tap(find.byKey(const Key('tasks-see-all')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Görev ekle'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).first, 'Türev soruları');
@@ -108,6 +104,8 @@ void main() {
         () => TaskLocalSource().getAll().single.isCompleted,
         'görevin tamamlanması',
       );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(BackButton)); // görev sayfasından Özet'e dön
       await tester.pumpAndSettle();
 
       // 4. POMODORO BAŞLAT (Matematik'e bağlı), 1 dakikadan fazla çalıştır,
@@ -138,25 +136,27 @@ void main() {
       await tester.pumpAndSettle();
 
       // 6. İSTATİSTİK GÜNCELLENDİ Mİ?
-      await openTab(tester, 'İstatistikler');
+      await openTab(tester, 'Analiz');
       await waitUntil(
         tester,
         () => find.byType(SubjectBreakdown).evaluate().isNotEmpty,
         'derslere göre dağılım',
       );
       await tester.pumpAndSettle();
-      expect(find.text('1 görev bitti'), findsOneWidget);
+      expect(find.text('1/1 Tamamlandı'), findsOneWidget);
+      expect(find.text('1 Oturum'), findsOneWidget);
+      // Ders hem göstergede hem süre çubuğu listesinde görünür.
       expect(
         find.descendant(
           of: find.byType(SubjectBreakdown),
           matching: find.text('Matematik'),
         ),
-        findsOneWidget,
+        findsNWidgets(2),
       );
       expect(
         find.descendant(
           of: find.byType(SubjectBreakdown),
-          matching: find.text('1 dk'),
+          matching: find.text('1dk'),
         ),
         findsOneWidget,
       );
@@ -168,11 +168,11 @@ void main() {
         () => find
             .descendant(
               of: find.byType(SubjectCard),
-              matching: find.text('1 dk'),
+              matching: find.text('1dk'),
             )
             .evaluate()
             .isNotEmpty,
-        'ders kartında 1 dk',
+        'ders kartında 1dk',
       );
 
       // TEMİZLİK

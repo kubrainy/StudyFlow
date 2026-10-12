@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:studyflow/app_module.dart';
 import 'package:studyflow/app_widget.dart';
+import 'package:studyflow/core/constants/hive_boxes.dart';
 import 'package:studyflow/core/notifications/notification_service.dart';
 import 'package:studyflow/core/theme/app_text_styles.dart';
 import 'package:studyflow/core/theme/app_theme.dart';
@@ -50,6 +54,26 @@ class MockNotificationService extends Mock implements NotificationService {}
 /// uzun ders adı, uzun görev başlığı, uzun kullanıcı adı, 50 saati aşan süre.
 void main() {
   setUpAll(loadAppFonts);
+
+  // Alt menü testleri gerçek modülü açar; sayfa kapıları (HiveBoxesGate) için
+  // geçici bir Hive klasörü ve boş kutular gerekir.
+  late Directory hiveDir;
+  setUpAll(() async {
+    hiveDir = await Directory.systemTemp.createTemp('studyflow_layout');
+    Hive.init(hiveDir.path);
+    for (final name in [
+      HiveBoxes.subjects,
+      HiveBoxes.tasks,
+      HiveBoxes.studySessions,
+      HiveBoxes.userSettings,
+    ]) {
+      await Hive.openBox(name);
+    }
+  });
+  tearDownAll(() async {
+    await Hive.close();
+    await hiveDir.delete(recursive: true);
+  });
 
   const sizes = [
     ('küçük telefon', Size(320, 568)),
@@ -234,7 +258,7 @@ void main() {
   }
 
   final pages = <String, Widget Function()>{
-    'Ana sayfa': () => DashboardPage(
+    'Özet': () => DashboardPage(
       viewModel: DashboardViewModel(
         sessionRepo,
         taskRepo,
@@ -266,7 +290,7 @@ void main() {
     ),
     'Görevler': () =>
         TasksPage(viewModel: TasksViewModel(taskRepo, subjectRepo)),
-    'İstatistikler': () => StatisticsPage(
+    'Analiz': () => StatisticsPage(
       viewModel: StatisticsViewModel(
         sessionRepo,
         taskRepo,
@@ -393,13 +417,7 @@ void main() {
   // Alt menü: etiket taşmaz ama sığmazsa küçülür (FittedBox). Taşma hatası
   // vermediği için yukarıdaki kontroller görmez; burada etiketin gerçekte kaç
   // piksellik yazıyla çizildiğine bakılır, okunamayacak kadar küçülmemeli.
-  const tabLabels = [
-    'Ana sayfa',
-    'Dersler',
-    'Görevler',
-    'Pomodoro',
-    'İstatistikler',
-  ];
+  const tabLabels = ['Özet', 'Dersler', 'Pomodoro', 'Analiz', 'Ayarlar'];
   const minReadableFontSize = 10.0;
 
   for (final (sizeName, size) in sizes) {

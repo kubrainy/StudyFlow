@@ -24,8 +24,8 @@ final appModule = createModule(
         c.module(tasksModule);
         c.module(pomodoroModule);
         c.module(statisticsModule);
+        c.module(settingsModule);
       },
     );
-    c.module(settingsModule);
   },
 );

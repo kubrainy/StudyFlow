@@ -3,6 +3,7 @@ import 'package:studyflow/models/study_session.dart';
 import 'package:studyflow/models/subject.dart';
 import 'package:studyflow/models/task.dart';
 import 'package:studyflow/modules/statistics/models/daily_minutes.dart';
+import 'package:studyflow/modules/statistics/models/range_stats.dart';
 import 'package:studyflow/modules/statistics/view_model/statistics_calculator.dart';
 
 void main() {
@@ -244,6 +245,220 @@ void main() {
       expect(summary.todayMinutes, 0);
       expect(summary.weekMinutes, 0);
       expect(summary.weekCompletedTasks, 0);
+    });
+  });
+
+  group('StatisticsCalculator.range', () {
+    RangeStats weekStats(List<StudySession> list, [List<Task> t = const []]) =>
+        calculator.range(list, t, [], now, StatsRange.week, goalMinutes: 240);
+
+    test(
+      'Haftalık: bu haftanın toplamı ve bir önceki hafta ayrı hesaplanır',
+      () {
+        final stats = weekStats([
+          session(DateTime(2026, 10, 5, 9), 60), // bu hafta Pzt
+          session(DateTime(2026, 10, 7, 9), 40), // bu hafta Çar
+          session(DateTime(2026, 9, 30, 9), 50), // geçen hafta Çar
+          session(DateTime(2026, 9, 1, 9), 99), // çok eski
+        ]);
+
+        expect(stats.totalMinutes, 100);
+        expect(stats.sessionCount, 2);
+        expect(stats.previousMinutes, 50);
+        expect(stats.previousSessionCount, 1);
+        expect(stats.changePercent, 100);
+        expect(stats.comparisonLabel, 'geçen haftaya');
+      },
+    );
+
+    test('Haftalık: 7 sütun, bugün seçili, hedef çizgisi günlük hedeftir', () {
+      final stats = weekStats([session(DateTime(2026, 10, 6, 9), 30)]);
+
+      expect(stats.bars, hasLength(7));
+      expect(stats.bars.first.label, 'Pzt');
+      expect(stats.bars[1].minutes, 30);
+      expect(stats.bars[1].caption, 'Salı');
+      expect(stats.selectedIndex, 2); // Çarşamba
+      expect(stats.goalLineMinutes, 240);
+    });
+
+    test('Haftalık ortalama: toplam / geçen gün sayısı (Pzt-Çar = 3 gün)', () {
+      final stats = weekStats([session(DateTime(2026, 10, 5, 9), 90)]);
+
+      expect(stats.averageMinutes, 30);
+    });
+
+    test('Görev başarısı: dönemde biten / (biten + bekleyen)', () {
+      final stats = weekStats([], [
+        task(completedAt: DateTime(2026, 10, 6)),
+        task(completedAt: DateTime(2026, 10, 7)),
+        task(completedAt: DateTime(2026, 9, 1)), // dönem dışı
+        task(done: false),
+      ]);
+
+      expect(stats.completedTasks, 2);
+      expect(stats.totalTasks, 3);
+      expect(stats.taskPercent, 67);
+    });
+
+    test('önceki dönem 0 dakikaysa değişim yüzdesi null', () {
+      final stats = weekStats([session(DateTime(2026, 10, 5, 9), 60)]);
+
+      expect(stats.previousMinutes, 0);
+      expect(stats.changePercent, isNull);
+    });
+
+    test('Günlük: yalnız bugün, dünle karşılaştırılır, 8 üç saatlik dilim', () {
+      final stats = calculator.range(
+        [
+          session(DateTime(2026, 10, 7, 10, 15), 50), // 09-12 dilimi
+          session(DateTime(2026, 10, 7, 15, 0), 25), // 15-18 dilimi
+          session(DateTime(2026, 10, 6, 10), 40), // dün
+        ],
+        [],
+        [],
+        now,
+        StatsRange.day,
+        goalMinutes: 240,
+      );
+
+      expect(stats.totalMinutes, 75);
+      expect(stats.previousMinutes, 40);
+      expect(stats.comparisonLabel, 'dünle');
+      expect(stats.bars, hasLength(8));
+      expect(stats.bars[3].minutes, 50);
+      expect(stats.bars[3].caption, '09:00 - 12:00');
+      expect(stats.bars[5].minutes, 25);
+      expect(stats.selectedIndex, 5); // saat 15
+      expect(stats.goalLineMinutes, isNull);
+      expect(stats.averageMinutes, 75);
+    });
+
+    test('Aylık: ayın her günü bir sütun, bugün seçili, geçen ayla kıyas', () {
+      final stats = calculator.range(
+        [
+          session(DateTime(2026, 10, 1, 9), 30),
+          session(DateTime(2026, 10, 7, 9), 60),
+          session(DateTime(2026, 9, 20, 9), 45),
+        ],
+        [],
+        [],
+        now,
+        StatsRange.month,
+        goalMinutes: 240,
+      );
+
+      expect(stats.bars, hasLength(31));
+      expect(stats.bars[0].minutes, 30);
+      expect(stats.bars[6].minutes, 60);
+      expect(stats.bars[6].caption, '7 Ekim');
+      expect(stats.selectedIndex, 6);
+      expect(stats.totalMinutes, 90);
+      expect(stats.previousMinutes, 45);
+      expect(stats.comparisonLabel, 'geçen aya');
+      expect(stats.averageMinutes, 13); // 90 / 7 gün
+    });
+
+    test('Aylık: eksende yalnız 1. ve 5 katı günlerin etiketi yazılır', () {
+      final stats = calculator.range(
+        [],
+        [],
+        [],
+        now,
+        StatsRange.month,
+        goalMinutes: 240,
+      );
+
+      final shown = [
+        for (final b in stats.bars)
+          if (b.showLabel) b.label,
+      ];
+      expect(shown, ['1', '5', '10', '15', '20', '25', '30']);
+    });
+
+    test(
+      'Tüm Zamanlar: önceki dönem yok, son 6 ay sütun, ortalama ilk günden',
+      () {
+        final stats = calculator.range(
+          [
+            session(DateTime(2026, 10, 1, 9), 100), // 7 gün önce
+            session(DateTime(2026, 8, 10, 9), 200),
+          ],
+          [],
+          [],
+          now,
+          StatsRange.all,
+          goalMinutes: 240,
+        );
+
+        expect(stats.totalMinutes, 300);
+        expect(stats.previousMinutes, isNull);
+        expect(stats.comparisonLabel, isNull);
+        expect(stats.bars, hasLength(6));
+        expect(stats.bars.last.label, 'Eki');
+        expect(stats.bars.last.minutes, 100);
+        expect(stats.bars.first.label, 'May');
+        expect(stats.bars[3].label, 'Ağu');
+        expect(stats.bars[3].minutes, 200);
+        expect(stats.selectedIndex, 5);
+        // İlk oturum 10 Ağustos: 58 gün → 300 / 58 ≈ 5.
+        expect(stats.averageMinutes, 5);
+      },
+    );
+
+    test('Tüm Zamanlar oturum yokken de hata vermez', () {
+      final stats = calculator.range(
+        [],
+        [],
+        [],
+        now,
+        StatsRange.all,
+        goalMinutes: 240,
+      );
+
+      expect(stats.totalMinutes, 0);
+      expect(stats.averageMinutes, 0);
+    });
+
+    test('ders payları yalnızca seçili aralıktan hesaplanır', () {
+      final stats = calculator.range(
+        [
+          session(DateTime(2026, 10, 7, 9), 60, subjectId: 'mat'),
+          session(DateTime(2026, 9, 1, 9), 500, subjectId: 'mat'),
+        ],
+        [],
+        [subject('mat', 'Matematik')],
+        now,
+        StatsRange.week,
+        goalMinutes: 240,
+      );
+
+      expect(stats.shares.single.minutes, 60);
+    });
+  });
+
+  group('StatisticsCalculator.bestWindow', () {
+    test('oturum yoksa null', () {
+      expect(calculator.bestWindow([]), isNull);
+    });
+
+    test('en çok dakikanın toplandığı iki saatlik aralığı bulur', () {
+      final window = calculator.bestWindow([
+        session(DateTime(2026, 10, 5, 9, 0), 60),
+        session(DateTime(2026, 10, 6, 10, 0), 60),
+        session(DateTime(2026, 10, 7, 20, 0), 30),
+      ]);
+
+      expect(window, (startHour: 9, endHour: 11));
+    });
+
+    test('saat sınırını geçen oturum kapsadığı saatlere bölünür', () {
+      // 10:30 - 11:30: 10. saate 30, 11. saate 30 dakika düşer.
+      final window = calculator.bestWindow([
+        session(DateTime(2026, 10, 5, 10, 30), 60),
+      ]);
+
+      expect(window, (startHour: 10, endHour: 12));
     });
   });
 }

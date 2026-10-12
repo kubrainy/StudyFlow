@@ -38,7 +38,7 @@ void main() {
 
     expect(find.text('Kübra'), findsOneWidget);
     expect(find.text('K'), findsOneWidget);
-    expect(find.text('12 sa 40 dk'), findsOneWidget);
+    expect(find.text('12s 40dk'), findsOneWidget);
     expect(find.text('toplam çalışma'), findsOneWidget);
     expect(find.text('25'), findsOneWidget);
     expect(find.text('biten görev'), findsOneWidget);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:studyflow/core/theme/app_colors.dart';
@@ -12,6 +13,8 @@ import 'package:studyflow/modules/settings/view/settings_page.dart';
 import 'package:studyflow/modules/settings/view/widgets/profile_card.dart';
 import 'package:studyflow/modules/settings/view_model/settings_view_model.dart';
 
+import '../../../helpers/test_fonts.dart';
+
 class MockStudySessionRepository extends Mock
     implements StudySessionRepository {}
 
@@ -23,6 +26,9 @@ class MockUserSettingsRepository extends Mock
     implements UserSettingsRepository {}
 
 void main() {
+  // Test yazı tipi (Ahem) gerçeğinden 2 kat geniştir; gerçek fontla ölçülür.
+  setUpAll(loadAppFonts);
+
   late MockStudySessionRepository sessions;
   late MockUserSettingsRepository settings;
   late SettingsViewModel viewModel;
@@ -47,6 +53,8 @@ void main() {
         pomodoroMinutes: any(named: 'pomodoroMinutes'),
         breakMinutes: any(named: 'breakMinutes'),
         notificationsEnabled: any(named: 'notificationsEnabled'),
+        longBreakMinutes: any(named: 'longBreakMinutes'),
+        longBreakEvery: any(named: 'longBreakEvery'),
       ),
     ).thenAnswer((invocation) async {
       final args = invocation.namedArguments;
@@ -56,6 +64,8 @@ void main() {
         pomodoroMinutes: args[#pomodoroMinutes] as int?,
         breakMinutes: args[#breakMinutes] as int?,
         notificationsEnabled: args[#notificationsEnabled] as bool?,
+        longBreakMinutes: args[#longBreakMinutes] as int?,
+        longBreakEvery: args[#longBreakEvery] as int?,
       );
       return stored;
     });
@@ -73,45 +83,52 @@ void main() {
     );
   }
 
-  testWidgets('profil kartı, çalışma ve bildirim bölümleri görünür', (
-    tester,
-  ) async {
-    await pumpPage(tester);
+  testWidgets('profil kartı ve bütün bölümler görünür', (tester) async {
+    await pumpPage(tester, size: const Size(390, 2000));
 
     expect(find.byType(ProfileCard), findsOneWidget);
     expect(find.text('Kübra'), findsOneWidget);
-    expect(find.text('ÇALIŞMA'), findsOneWidget);
-    expect(find.text('Günlük hedef'), findsOneWidget);
-    expect(find.text('Pomodoro süresi'), findsOneWidget);
-    expect(find.text('Mola süresi'), findsOneWidget);
-    expect(find.text('BİLDİRİMLER'), findsOneWidget);
-    expect(find.text('Pomodoro bitince bildir'), findsOneWidget);
-    expect(find.byType(DurationStepper), findsNWidgets(3));
+    expect(find.text('ÇALIŞMA & POMODORO AYARLARI'), findsOneWidget);
+    expect(find.text('Standart 25/5'), findsOneWidget);
+    expect(find.text('Günlük Çalışma Hedefi'), findsOneWidget);
+    expect(find.text('Çalışma Oturumu Süresi'), findsOneWidget);
+    expect(find.text('Kısa Mola Süresi'), findsOneWidget);
+    expect(find.text('Uzun Mola Süresi'), findsOneWidget);
+    expect(find.text('Uzun Mola Aralığı'), findsOneWidget);
+    expect(find.text('BİLDİRİM & ALARM TERCİHLERİ'), findsOneWidget);
+    expect(find.text('Oturum Sonu Bildirimleri'), findsOneWidget);
+    expect(find.text('VERİ YÖNETİMİ'), findsOneWidget);
+    expect(find.text('Verileri Dışa Aktar (JSON)'), findsOneWidget);
+    expect(find.text('UYGULAMA & MİMARİ BİLGİSİ'), findsOneWidget);
+    expect(find.text('StudyFlow © 2026'), findsOneWidget);
+    expect(find.byType(DurationStepper), findsNWidgets(5));
     expect(tester.takeException(), isNull);
   });
 
   testWidgets('stepper değerleri kayıtlı ayarlardan gelir', (tester) async {
-    await pumpPage(tester);
+    await pumpPage(tester, size: const Size(390, 2000));
 
-    expect(find.text('120 dk'), findsOneWidget);
+    expect(find.text('2s 00dk'), findsOneWidget);
     expect(find.text('25 dk'), findsOneWidget);
     expect(find.text('5 dk'), findsOneWidget);
+    expect(find.text('15 dk'), findsOneWidget);
+    expect(find.text('4 Oturumda Bir'), findsOneWidget);
   });
 
   testWidgets('günlük hedef artırılınca 15 dk eklenir ve kaydedilir', (
     tester,
   ) async {
-    await pumpPage(tester);
+    await pumpPage(tester, size: const Size(390, 2000));
 
     await tester.tap(find.byTooltip('Günlük hedef artır'));
     await tester.pump();
 
-    expect(find.text('135 dk'), findsOneWidget);
+    expect(find.text('2s 15dk'), findsOneWidget);
     verify(() => settings.update(dailyGoalMinutes: 135)).called(1);
   });
 
   testWidgets('Pomodoro süresi azaltılınca 5 dk düşer', (tester) async {
-    await pumpPage(tester);
+    await pumpPage(tester, size: const Size(390, 2000));
 
     await tester.tap(find.byTooltip('Pomodoro süresi azalt'));
     await tester.pump();
@@ -121,7 +138,7 @@ void main() {
   });
 
   testWidgets('mola süresi 1 dk adımla artar', (tester) async {
-    await pumpPage(tester);
+    await pumpPage(tester, size: const Size(390, 2000));
 
     await tester.tap(find.byTooltip('Mola süresi artır'));
     await tester.pump();
@@ -130,8 +147,57 @@ void main() {
     verify(() => settings.update(breakMinutes: 6)).called(1);
   });
 
+  testWidgets('uzun mola süresi 5 dk adımla artar', (tester) async {
+    await pumpPage(tester, size: const Size(390, 2000));
+
+    await tester.tap(find.byTooltip('Uzun mola süresi artır'));
+    await tester.pump();
+
+    expect(find.text('20 dk'), findsOneWidget);
+    verify(() => settings.update(longBreakMinutes: 20)).called(1);
+  });
+
+  testWidgets('uzun mola aralığı 1 oturum adımla azalır', (tester) async {
+    await pumpPage(tester, size: const Size(390, 2000));
+
+    await tester.tap(find.byTooltip('Uzun mola aralığı azalt'));
+    await tester.pump();
+
+    expect(find.text('3 Oturumda Bir'), findsOneWidget);
+    verify(() => settings.update(longBreakEvery: 3)).called(1);
+  });
+
+  testWidgets('Aktar düğmesi JSON yedeğini panoya kopyalar', (tester) async {
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map)['text'] as String?;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    await pumpPage(tester, size: const Size(390, 2000));
+
+    await tester.tap(find.text('Aktar'));
+    await tester.pump();
+
+    expect(copied, contains('"settings"'));
+    expect(copied, contains('"subjects"'));
+    expect(copied, contains('"tasks"'));
+    expect(copied, contains('"studySessions"'));
+    expect(find.text('Yedek panoya kopyalandı'), findsOneWidget);
+  });
+
   testWidgets('bildirim anahtarı değeri kaydeder', (tester) async {
-    await pumpPage(tester);
+    await pumpPage(tester, size: const Size(390, 2000));
 
     await tester.tap(find.byType(Switch));
     await tester.pump();
@@ -143,7 +209,7 @@ void main() {
   testWidgets('açık anahtar fare üstüne gelince de aynı renkte kalır', (
     tester,
   ) async {
-    await pumpPage(tester);
+    await pumpPage(tester, size: const Size(390, 2000));
     final track = tester.widget<Switch>(find.byType(Switch)).trackColor!;
 
     const on = {WidgetState.selected};

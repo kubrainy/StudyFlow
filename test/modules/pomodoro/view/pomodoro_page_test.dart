@@ -78,8 +78,15 @@ void main() {
     );
   });
 
-  Future<void> openPage(WidgetTester tester) =>
-      tester.pumpWidget(MaterialApp(home: PomodoroPage(viewModel: viewModel)));
+  /// Sayfa uzun olduğu için (kartlar dahil) yüksek bir ekranda açılır.
+  Future<void> openPage(WidgetTester tester) {
+    tester.view.physicalSize = const Size(390, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    return tester.pumpWidget(
+      MaterialApp(home: PomodoroPage(viewModel: viewModel)),
+    );
+  }
 
   /// Sayaç saniyelik zamanlayıcı açtığı için sayfa kapatılıp ViewModel
   /// test gövdesinin sonunda kapatılır (test aracı bekleyen zamanlayıcıya bakar).
@@ -90,31 +97,98 @@ void main() {
 
   group('hazır durumu', () {
     testWidgets(
-      'süre, "Hazır", süre ayarı, Başlat düğmesi ve serbest çalışma görünür',
+      'süre, "Hazır", oturum sırası, Başlat düğmesi ve serbest çalışma görünür',
       (tester) async {
         await openPage(tester);
 
         expect(find.text('25:00'), findsOneWidget);
-        expect(find.text('HAZIR'), findsOneWidget);
-        expect(find.byTooltip('Odaklanma süresi artır'), findsOneWidget);
+        expect(find.text('Hazır'), findsOneWidget);
+        expect(find.text('Oturum 1 / 4'), findsOneWidget);
         expect(find.text('Serbest çalışma'), findsOneWidget);
         expect(find.byTooltip('Başlat'), findsOneWidget);
-        expect(find.byTooltip('Bitir'), findsNothing);
+        // Hazırken sıfırla ve bitir düğmeleri pasiftir ama görünür.
+        expect(find.byTooltip('Sıfırla'), findsOneWidget);
 
         await closePage(tester);
       },
     );
 
-    testWidgets('Mola şeridine dokununca mola süresi ve ayarı görünür', (
+    testWidgets('sekmelerde her aşamanın süresi yazar', (tester) async {
+      await openPage(tester);
+
+      expect(find.text('Odaklan\n(25dk)'), findsOneWidget);
+      expect(find.text('Kısa Mola\n(5dk)'), findsOneWidget);
+      expect(find.text('Uzun Mola\n(15dk)'), findsOneWidget);
+
+      await closePage(tester);
+    });
+
+    testWidgets('Kısa Mola sekmesine dokununca mola süresi görünür', (
       tester,
     ) async {
       await openPage(tester);
 
-      await tester.tap(find.text('Mola'));
+      await tester.tap(find.textContaining('Kısa Mola'));
       await tester.pump();
 
       expect(find.text('05:00'), findsOneWidget);
-      expect(find.byTooltip('Mola süresi artır'), findsOneWidget);
+
+      await closePage(tester);
+    });
+
+    testWidgets('Uzun Mola sekmesine dokununca uzun mola süresi görünür', (
+      tester,
+    ) async {
+      await openPage(tester);
+
+      await tester.tap(find.textContaining('Uzun Mola'));
+      await tester.pump();
+
+      expect(find.text('15:00'), findsOneWidget);
+
+      await closePage(tester);
+    });
+
+    testWidgets('bugünkü oturum kartı sayı, hedef ve dakikayı yazar', (
+      tester,
+    ) async {
+      when(() => sessions.getAll()).thenReturn([
+        StudySession(id: 'a', startedAt: now, durationMinutes: 25),
+        StudySession(id: 'b', startedAt: now, durationMinutes: 50),
+      ]);
+      await openPage(tester);
+
+      expect(find.text('2 Oturum'), findsOneWidget);
+      expect(find.text('HEDEF: 120 dk'), findsOneWidget);
+      expect(find.text('Bugün: 75 dk odaklanma tamamlandı'), findsOneWidget);
+      expect(find.text('Oturum 3 / 4'), findsOneWidget);
+
+      await closePage(tester);
+    });
+
+    testWidgets('seri varsa SERİ rozeti görünür', (tester) async {
+      when(() => sessions.getAll()).thenReturn([
+        StudySession(id: 'a', startedAt: now, durationMinutes: 25),
+      ]);
+      await openPage(tester);
+
+      expect(find.text('SERİ #1'), findsOneWidget);
+
+      await closePage(tester);
+    });
+
+    testWidgets('bildirim anahtarı ayarı değiştirir', (tester) async {
+      when(
+        () => settings.update(
+          notificationsEnabled: any(named: 'notificationsEnabled'),
+        ),
+      ).thenAnswer((_) async => const UserSettings());
+      await openPage(tester);
+
+      await tester.tap(find.byType(Switch));
+      await tester.pump();
+
+      verify(() => settings.update(notificationsEnabled: false)).called(1);
 
       await closePage(tester);
     });
@@ -176,17 +250,16 @@ void main() {
 
   group('çalışma', () {
     testWidgets(
-      'Başlat sayacı çalıştırır: Odaklan, Duraklat ve Bitir görünür',
+      'Başlat sayacı çalıştırır: Odak Modu Aktif, Duraklat ve Bitir görünür',
       (tester) async {
         await openPage(tester);
 
         await tester.tap(find.byTooltip('Başlat'));
         await tester.pump();
 
-        expect(find.text('ODAKLAN'), findsOneWidget);
+        expect(find.text('Odak Modu Aktif'), findsOneWidget);
         expect(find.byTooltip('Duraklat'), findsOneWidget);
         expect(find.byTooltip('Bitir'), findsOneWidget);
-        expect(find.byTooltip('Odaklanma süresi artır'), findsNothing);
 
         await closePage(tester);
       },
@@ -212,13 +285,13 @@ void main() {
 
       await tester.tap(find.byTooltip('Duraklat'));
       await tester.pump();
-      expect(find.text('DURAKLATILDI'), findsOneWidget);
+      expect(find.text('Duraklatıldı'), findsOneWidget);
       await pass(tester, const Duration(minutes: 10));
       expect(find.text('20:00'), findsOneWidget);
 
       await tester.tap(find.byTooltip('Devam'));
       await tester.pump();
-      expect(find.text('ODAKLAN'), findsOneWidget);
+      expect(find.text('Odak Modu Aktif'), findsOneWidget);
       await pass(tester, const Duration(minutes: 1));
       expect(find.text('19:00'), findsOneWidget);
 
@@ -236,7 +309,7 @@ void main() {
 
       verify(() => sessions.add(null, DateTime(2026, 10, 6, 10), 3)).called(1);
       expect(find.text('3 dk kaydedildi'), findsOneWidget);
-      expect(find.text('HAZIR'), findsOneWidget);
+      expect(find.text('Hazır'), findsOneWidget);
 
       await closePage(tester);
     });
@@ -270,13 +343,13 @@ void main() {
 
         verify(() => sessions.add(null, DateTime(2026, 10, 6, 10), 25))
             .called(1);
-        expect(find.text('MOLA'), findsOneWidget);
+        expect(find.text('Mola Zamanı'), findsOneWidget);
         expect(find.byTooltip('Molayı atla'), findsOneWidget);
 
         await tester.tap(find.byTooltip('Molayı atla'));
         await tester.pump();
 
-        expect(find.text('HAZIR'), findsOneWidget);
+        expect(find.text('Hazır'), findsOneWidget);
         expect(find.text('25:00'), findsOneWidget);
 
         await closePage(tester);

@@ -42,6 +42,7 @@ void main() {
     settings = MockUserSettingsRepository();
     when(() => settings.get())
         .thenReturn(const UserSettings(pomodoroMinutes: 25, breakMinutes: 5));
+    when(() => sessions.getAll()).thenReturn([]);
     when(() => sessions.add(any(), any(), any())).thenAnswer(
       (_) async =>
           StudySession(id: 's', startedAt: DateTime(2026), durationMinutes: 1),
@@ -300,6 +301,58 @@ void main() {
       pass(const Duration(minutes: 25));
       await viewModel.tick();
       pass(const Duration(minutes: 5));
+
+      await viewModel.tick();
+
+      expect(viewModel.status, PomodoroStatus.idle);
+      expect(viewModel.phase, PomodoroPhase.work);
+      verify(() => sessions.add(any(), any(), any())).called(1);
+    });
+
+    test('döngüdeki son oturumdan sonra uzun mola başlar', () async {
+      // Bugün 3 oturum kayıtlı; bitirilen 4. olacağı için uzun mola gelir.
+      when(() => sessions.getAll()).thenReturn([
+        for (var i = 0; i < 3; i++)
+          StudySession(id: '$i', startedAt: now, durationMinutes: 25),
+      ]);
+      when(() => settings.get()).thenReturn(
+        const UserSettings(
+          pomodoroMinutes: 25,
+          breakMinutes: 5,
+          longBreakMinutes: 15,
+          longBreakEvery: 4,
+        ),
+      );
+      viewModel.start();
+      pass(const Duration(minutes: 25));
+
+      await viewModel.tick();
+
+      expect(viewModel.phase, PomodoroPhase.longRest);
+      expect(viewModel.totalDuration, const Duration(minutes: 15));
+    });
+
+    test('döngü dolmadıysa kısa mola başlar', () async {
+      when(() => sessions.getAll()).thenReturn([
+        StudySession(id: '0', startedAt: now, durationMinutes: 25),
+      ]);
+      viewModel.start();
+      pass(const Duration(minutes: 25));
+
+      await viewModel.tick();
+
+      expect(viewModel.phase, PomodoroPhase.rest);
+    });
+
+    test('uzun mola dolunca hazır duruma döner, bir şey kaydetmez', () async {
+      when(() => sessions.getAll()).thenReturn([
+        for (var i = 0; i < 3; i++)
+          StudySession(id: '$i', startedAt: now, durationMinutes: 25),
+      ]);
+      viewModel.start();
+      pass(const Duration(minutes: 25));
+      await viewModel.tick();
+      pass(const Duration(minutes: 15));
 
       await viewModel.tick();
 
@@ -763,5 +816,54 @@ void main() {
         expect(viewModel.errorMessage, isNull);
       });
     });
+  });
+
+  group('bugünlük özetler', () {
+    test('oturum sayısı, toplam dakika ve döngü sırası bugünün oturumlarından gelir', () {
+      when(() => sessions.getAll()).thenReturn([
+        StudySession(id: 'a', startedAt: now, durationMinutes: 25),
+        StudySession(id: 'b', startedAt: now, durationMinutes: 50),
+        // Dün: bugüne sayılmaz.
+        StudySession(
+          id: 'c',
+          startedAt: now.subtract(const Duration(days: 1)),
+          durationMinutes: 40,
+        ),
+      ]);
+
+      expect(viewModel.todaySessionCount, 2);
+      expect(viewModel.todayTotalMinutes, 75);
+      expect(viewModel.completedInCycle, 2); // 2 % 4
+      expect(viewModel.streakDays, 2); // bugün + dün
+    });
+
+    test('her aşamanın süresi ayarlardan okunur', () {
+      when(() => settings.get()).thenReturn(
+        const UserSettings(
+          pomodoroMinutes: 30,
+          breakMinutes: 6,
+          longBreakMinutes: 20,
+        ),
+      );
+
+      expect(viewModel.minutesOf(PomodoroPhase.work), 30);
+      expect(viewModel.minutesOf(PomodoroPhase.rest), 6);
+      expect(viewModel.minutesOf(PomodoroPhase.longRest), 20);
+    });
+
+    test(
+      'uzun mola sekmesinde süre uzun mola aralığına göre kaydedilir',
+      () async {
+        when(
+          () =>
+              settings.update(longBreakMinutes: any(named: 'longBreakMinutes')),
+        ).thenAnswer((_) async => const UserSettings());
+        await viewModel.switchPhase(PomodoroPhase.longRest);
+
+        await viewModel.setDuration(100); // en fazla 60
+
+        verify(() => settings.update(longBreakMinutes: 60)).called(1);
+      },
+    );
   });
 }
