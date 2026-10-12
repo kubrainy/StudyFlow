@@ -128,7 +128,7 @@ Testler `test/` altında, `lib/` ile aynı klasör düzenindedir (`test/modules/
 
 ## Ekran görüntüleri
 
-Görüntüler Android emülatöründe (1080×2400) ve örnek verilerle alındı; "Elif" ve dersler örnektir.
+Görüntüler bilgisayarda telefon boyutunda (390×844, 2×) ve örnek verilerle üretildi; "Elif" ve dersler örnektir. Başlıktaki 👋 emojisi bu ortamda çizilemediği için yer tutucu olarak görünür, telefonda doğru görünür. Analiz görüntüsü bugün haftanın başı olduğu için Aylık görünümdedir.
 
 <table>
   <tr>
@@ -148,13 +148,19 @@ Görüntüler Android emülatöründe (1080×2400) ve örnek verilerle alındı;
   </tr>
 </table>
 
-Görüntüleri yeniden almak için bir emülatör ya da cihaz açıkken:
+Görüntüleri yeniden almak için (cihaz gerekmez, ~1,5 dk sürer; Pomodoro süresi gerçek saatle ölçüldüğü için bekler):
+
+```bash
+flutter test tool/screenshots/golden_screenshots_test.dart --update-goldens
+```
+
+Bir emülatör ya da cihaz açıkken gerçek ekrandan almak için:
 
 ```bash
 flutter drive --driver=tool/screenshots/driver.dart --target=tool/screenshots/screenshots_test.dart -d <cihaz-kimliği>
 ```
 
-Test (`tool/screenshots/screenshots_test.dart`) örnek veriyi geçici bir klasöre yazar, cihazdaki gerçek uygulama verisine dokunmaz. Örnek oturumlar "bugünün" 09:00–11:00 saatlerine konur; bu yüzden cihazın saati 11'den sonra olmalıdır (emülatör varsayılan olarak UTC saatiyle açılır, saat dilimi ayarlanmalıdır). Pomodoro adımında bildirim izni penceresi çıkarsa, bu pencere Flutter dışında olduğu için testten kapatılamaz; izin önceden `adb shell pm grant com.kubrainy.studyflow android.permission.POST_NOTIFICATIONS` ile verilebilir. Görüntüler `screenshots/` klasörüne yazılır.
+İki araç da (`golden_screenshots_test.dart` ve `screenshots_test.dart`) aynı örnek veriyi (`tool/screenshots/seed.dart`) kullanır. Cihaz testi örnek veriyi geçici bir klasöre yazar, cihazdaki gerçek uygulama verisine dokunmaz. Örnek oturumlar "bugünün" 09:00–11:00 saatlerine konur; bu yüzden cihazın saati 11'den sonra olmalıdır (emülatör varsayılan olarak UTC saatiyle açılır, saat dilimi ayarlanmalıdır). Pomodoro adımında bildirim izni penceresi çıkarsa, bu pencere Flutter dışında olduğu için testten kapatılamaz; izin önceden `adb shell pm grant com.kubrainy.studyflow android.permission.POST_NOTIFICATIONS` ile verilebilir. Görüntüler `screenshots/` klasörüne yazılır.
 
 ## Bilinen problemler ve eksikler
 
@@ -166,7 +172,6 @@ Test (`tool/screenshots/screenshots_test.dart`) örnek veriyi geçici bir klasö
 - İstatistiklerdeki "bu hafta biten görev" sayısı, tamamlanma tarihi kaydedilmemiş eski görevleri saymaz.
 - Tasarımdaki profil fotoğrafı, sunucu eşitleme, arka plan sesi, çevrimdışı mod anahtarı, günlük hatırlatıcı ve mola sonu titreşimi yapılmadı. Rozetler (İstikrar Ustası, Hedef Avcısı, Görev Canavarı) ve "Verimlilik analizi" gerçek verilerden hesaplanır. Ders kartındaki ilerleme çubuğu "haftalık hedef" değil görev ilerlemesidir (derslerin kod, hoca ve haftalık hedef alanı yok).
 - Ders ve profil için fotoğraf yoktur; avatar isim baş harfidir.
-- "Ekran görüntüleri" bölümündeki resimler eski tasarıma aittir; yeni tasarımla yeniden alınmalıdır.
 
 ## Başarı kriterleri
 
